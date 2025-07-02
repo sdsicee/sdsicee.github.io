@@ -12,12 +12,7 @@
   "description": "",
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^17.0.1",
-    "express": "^5.1.0",
-<<<<<<< HEAD
-    "node-fetch": "^2.7.0"
-=======
-    "node-fetch": "^3.3.2"
->>>>>>> d94a88bb23140d3eb52edad5d07b4b74612a5a2a
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "node-fetch": "^2.0.0"
   }
-}
