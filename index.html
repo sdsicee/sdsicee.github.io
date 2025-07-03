@@ -174,6 +174,8 @@
         let masteringSettings = null;
         let audioContext = null;
         let currentSource = null;
+        let lastPlayedType = null;
+        let isPlaying = false;
 
         const analyzeAudio = (file) => {
             return new Promise((resolve, reject) => {
@@ -316,66 +318,102 @@
             return html;
         };
 
-        const playAudio = (processed = false) => {
-            if (!audioBuffer) return;
-            if (currentSource) { try { currentSource.stop(); } catch (e) {} }
-            if (!audioContext || audioContext.state === 'closed') {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            const source = audioContext.createBufferSource();
-            source.buffer = audioBuffer;
-            currentSource = source;
-
-            if (processed && masteringSettings) {
-                let lastNode = source;
-                try {
-                    if (masteringSettings.correctiveEQ) {
-                        masteringSettings.correctiveEQ.forEach(eq => {
-                            if (isFinite(eq.frequency) && isFinite(eq.q) && isFinite(eq.gain)) {
-                                const filter = audioContext.createBiquadFilter();
-                                filter.type = 'peaking';
-                                filter.frequency.value = eq.frequency;
-                                filter.Q.value = eq.q;
-                                filter.gain.value = eq.gain;
-                                lastNode.connect(filter);
-                                lastNode = filter;
-                            }
-                        });
-                    }
-                    if (masteringSettings.compressor) {
-                        const comp = masteringSettings.compressor;
-                        const compressor = audioContext.createDynamicsCompressor();
-                        if(isFinite(comp.threshold)) compressor.threshold.value = comp.threshold;
-                        if(isFinite(comp.ratio)) compressor.ratio.value = comp.ratio;
-                        if(isFinite(comp.attack)) compressor.attack.value = comp.attack / 1000;
-                        if(isFinite(comp.release)) compressor.release.value = comp.release / 1000;
-                        if(isFinite(comp.knee)) compressor.knee.value = comp.knee;
-                        lastNode.connect(compressor);
-                        lastNode = compressor;
-                    }
-                    if (masteringSettings.tonalEQ) {
-                        masteringSettings.tonalEQ.forEach(eq => {
-                            if (isFinite(eq.frequency) && isFinite(eq.gain) && eq.type) {
-                                const filter = audioContext.createBiquadFilter();
-                                filter.type = eq.type;
-                                filter.frequency.value = eq.frequency;
-                                if(isFinite(eq.q)) filter.Q.value = eq.q;
-                                filter.gain.value = eq.gain;
-                                lastNode.connect(filter);
-                                lastNode = filter;
-                            }
-                        });
-                    }
-                    lastNode.connect(audioContext.destination);
-                } catch (e) {
-                    console.error("Error applying mastering chain, playing original. Error:", e);
-                    source.disconnect();
-                    source.connect(audioContext.destination);
+        const updatePlayButtonStates = () => {
+            if (isPlaying) {
+                if (lastPlayedType === 'original') {
+                    previewOriginalBtn.textContent = 'Pause';
+                    previewMasteredBtn.textContent = 'Preview Mastered';
+                } else {
+                    previewMasteredBtn.textContent = 'Pause';
+                    previewOriginalBtn.textContent = 'Preview Original';
                 }
             } else {
-                source.connect(audioContext.destination);
+                previewOriginalBtn.textContent = 'Preview Original';
+                previewMasteredBtn.textContent = 'Preview Mastered';
             }
-            source.start(0);
+        };
+
+        const togglePlayback = (type) => {
+            if (!audioBuffer) return;
+
+            if (isPlaying && lastPlayedType === type) {
+                if (audioContext && audioContext.state === 'running') {
+                    audioContext.suspend();
+                }
+                isPlaying = false;
+            } 
+            else if (!isPlaying && audioContext && audioContext.state === 'suspended' && lastPlayedType === type) {
+                audioContext.resume();
+                isPlaying = true;
+            } 
+            else {
+                if (audioContext && audioContext.state !== 'closed') {
+                    audioContext.close();
+                }
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                currentSource = source;
+
+                let lastNode = source;
+                if (type === 'mastered' && masteringSettings) {
+                    try {
+                        if (masteringSettings.correctiveEQ) {
+                            masteringSettings.correctiveEQ.forEach(eq => {
+                                if (isFinite(eq.frequency) && isFinite(eq.q) && isFinite(eq.gain)) {
+                                    const filter = audioContext.createBiquadFilter();
+                                    filter.type = 'peaking';
+                                    filter.frequency.value = eq.frequency;
+                                    filter.Q.value = eq.q;
+                                    filter.gain.value = eq.gain;
+                                    lastNode.connect(filter);
+                                    lastNode = filter;
+                                }
+                            });
+                        }
+                        if (masteringSettings.compressor) {
+                            const comp = masteringSettings.compressor;
+                            const compressor = audioContext.createDynamicsCompressor();
+                            if(isFinite(comp.threshold)) compressor.threshold.value = comp.threshold;
+                            if(isFinite(comp.ratio)) compressor.ratio.value = comp.ratio;
+                            if(isFinite(comp.attack)) compressor.attack.value = comp.attack / 1000;
+                            if(isFinite(comp.release)) compressor.release.value = comp.release / 1000;
+                            if(isFinite(comp.knee)) compressor.knee.value = comp.knee;
+                            lastNode.connect(compressor);
+                            lastNode = compressor;
+                        }
+                        if (masteringSettings.tonalEQ) {
+                            masteringSettings.tonalEQ.forEach(eq => {
+                                if (isFinite(eq.frequency) && isFinite(eq.gain) && eq.type) {
+                                    const filter = audioContext.createBiquadFilter();
+                                    filter.type = eq.type;
+                                    filter.frequency.value = eq.frequency;
+                                    if(isFinite(eq.q)) filter.Q.value = eq.q;
+                                    filter.gain.value = eq.gain;
+                                    lastNode.connect(filter);
+                                    lastNode = filter;
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error("Error applying mastering chain, playing original. Error:", e);
+                        lastNode = source;
+                    }
+                }
+                lastNode.connect(audioContext.destination);
+                source.start(0);
+                isPlaying = true;
+                lastPlayedType = type;
+                source.onended = () => {
+                    isPlaying = false;
+                    lastPlayedType = null;
+                    if (audioContext && audioContext.state !== 'closed') {
+                        audioContext.close();
+                    }
+                    updatePlayButtonStates();
+                };
+            }
+            updatePlayButtonStates();
         };
 
         const exportMasteredFile = async () => {
@@ -383,11 +421,10 @@
             downloadMasteredBtn.disabled = true;
             downloadMasteredBtn.textContent = 'Exporting...';
             try {
-                const offlineCtx = new OfflineAudioContext(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate);
+                const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate);
                 const source = offlineCtx.createBufferSource();
                 source.buffer = audioBuffer;
                 let lastNode = source;
-                // Replicate the full audio chain for export
                 if (masteringSettings.correctiveEQ) {
                     masteringSettings.correctiveEQ.forEach(eq => {
                          if (isFinite(eq.frequency) && isFinite(eq.q) && isFinite(eq.gain)) {
@@ -490,8 +527,8 @@
         }
 
 
-        previewOriginalBtn.addEventListener('click', () => playAudio(false));
-        previewMasteredBtn.addEventListener('click', () => playAudio(true));
+        previewOriginalBtn.addEventListener('click', () => togglePlayback('original'));
+        previewMasteredBtn.addEventListener('click', () => togglePlayback('mastered'));
         downloadMasteredBtn.addEventListener('click', exportMasteredFile);
 
         audioUpload.addEventListener('change', (event) => {
@@ -527,7 +564,7 @@ Here is the data:
 - **Muddy Frequency:** **${analysis.muddyFreq} Hz**
 - **Harsh Frequency:** **${analysis.harshFreq} Hz**
 
-Your task is to provide a step-by-step mastering guide in Markdown. CRITICALLY, you must also provide a JSON object containing the specific parameters for the audio processing chain. The guide should be friendly and explain the reasoning. The JSON object must be separate and clearly formatted.
+Your task is to provide a step-by-step mastering guide in Markdown. CRITICALLY, you must also provide a JSON object containing the specific parameters for the audio processing chain. The guide should be friendly and explain the reasoning. The JSON object must be separate and clearly formatted. Do not mention limiting or dithering.
 
 **Your entire response must contain a single JSON block. Do not provide any example JSON.**
 
@@ -538,7 +575,9 @@ Your task is to provide a step-by-step mastering guide in Markdown. CRITICALLY, 
   - The first object's "frequency" property must be exactly **${analysis.muddyFreq}**.
   - The second object's "frequency" property must be exactly **${analysis.harshFreq}**.
   - Both objects must have "q" (Number) and "gain" (Number, should be negative) properties.
-- **compressor**: An object with "threshold", "ratio", "attack", "release", and "knee" properties (all Numbers). Base the settings on the Crest Factor. A high crest factor (>12) needs more compression (e.g., ratio 3:1 or 4:1, lower threshold). A low crest factor (<8) needs gentle settings (e.g., ratio 2:1, higher threshold).
+- **compressor**: An object with "threshold", "ratio", "attack", "release", and "knee" properties (all Numbers). 
+  - Base the "threshold" and "ratio" on the Crest Factor. A high crest factor (>12) needs more compression (e.g., ratio 3:1 or 4:1, lower threshold). A low crest factor (<8) needs gentle settings (e.g., ratio 2:1, higher threshold).
+  - Base the "attack" and "release" on the Spectral Profile. For a "bass-heavy" profile, use a slower attack (30-50ms) to preserve transients. For a "bright" or "mid-forward" profile, use a faster attack (10-25ms). Set the release to be 3-5 times the attack time.
 - **tonalEQ**: An array of three objects, each with "frequency", "q", "gain", and "type" properties.
   - The first object should be a "lowshelf" with a "frequency" property around 120.
   - The second object should be a "peaking" EQ with a "frequency" property between 2000 and 5000.
@@ -546,12 +585,10 @@ Your task is to provide a step-by-step mastering guide in Markdown. CRITICALLY, 
   - Base the "gain" values on the Spectral Profile. If the profile is "bright", add less high-shelf gain and more low-shelf. If "bass-heavy", do the opposite.
 - "attack" and "release" values must be in milliseconds.
 `;
-                // FIX: The API call now goes to the secure proxy server
                 const apiUrl = 'https://ai-mastering-proxy.onrender.com/api/master';
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // The body sends the prompt to the proxy
                     body: JSON.stringify({ prompt: prompt }) 
                 });
                 if (!response.ok) {
@@ -559,7 +596,6 @@ Your task is to provide a step-by-step mastering guide in Markdown. CRITICALLY, 
                     throw new Error(`API Error: ${response.statusText} - ${JSON.stringify(errorData)}`);
                 }
                 
-                // The proxy forwards the response from Gemini, so the structure is the same
                 const result = await response.json();
                 let text = 'Error: Could not retrieve instructions.';
                 if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -609,7 +645,9 @@ Your task is to provide a step-by-step mastering guide in Markdown. CRITICALLY, 
         
         resetBtn.addEventListener('click', () => {
             if (currentSource) { try { currentSource.stop(); } catch(e) {} }
-            if (audioContext) { audioContext.close(); }
+            if (audioContext && audioContext.state !== 'closed') {
+                audioContext.close();
+            }
             uploadSection.classList.remove('hidden');
             resultSection.classList.add('hidden');
             playerControls.classList.add('hidden');
@@ -621,6 +659,9 @@ Your task is to provide a step-by-step mastering guide in Markdown. CRITICALLY, 
             uploadedFile = null;
             audioBuffer = null;
             masteringSettings = null;
+            isPlaying = false;
+            lastPlayedType = null;
+            updatePlayButtonStates();
         });
     </script>
 </body>
