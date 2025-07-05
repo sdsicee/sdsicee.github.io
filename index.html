@@ -574,9 +574,11 @@ Here is the data:
 - **Muddy Frequency:** **${analysis.muddyFreq} Hz**
 - **Harsh Frequency:** **${analysis.harshFreq} Hz**
 
-Your task is to provide a step-by-step mastering guide in Markdown. CRITICALLY, you must also provide a JSON object containing the specific parameters for the audio processing chain. The guide should be friendly and explain the reasoning. The JSON object must be separate and clearly formatted. Do not mention limiting or dithering.
+Your task is to provide a step-by-step mastering guide in Markdown. You must also provide a JSON object containing the specific parameters for the audio processing chain. 
 
-**Crucially, the settings you describe in the text guide (e.g., "a small boost at 3kHz") MUST EXACTLY MATCH the numerical values you provide in the JSON object.**
+**IMPORTANT: Do NOT mention the JSON object, its parameters, or the fact that you are creating it in the user-facing Markdown guide.** The guide should be friendly and explain the reasoning for the settings without referring to the technical data structure.
+
+**Crucially, the settings you describe in the text guide (e.g., "a small boost at 3kHz") MUST EXACTLY MATCH the numerical values you provide in the JSON object. When describing the Tonal EQ, you MUST use the word 'boost' if the 'gain' value is positive, and 'cut' if the 'gain' value is negative.**
 
 **Your entire response must contain a single JSON block. Do not provide any example JSON.**
 
