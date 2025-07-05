@@ -9,8 +9,23 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// --- FIX: More specific CORS configuration ---
+// This explicitly allows requests from all origins, which is often
+// necessary for services like Render.
+const corsOptions = {
+  origin: '*',
+  methods: 'POST',
+  optionsSuccessStatus: 200 // For legacy browser support
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Add a simple root route to check if the server is running
+app.get('/', (req, res) => {
+    res.status(200).send('AI Mastering Proxy is running!');
+});
+
 
 app.post('/api/master', async (req, res) => {
     try {
@@ -58,5 +73,4 @@ app.post('/api/master', async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Secure proxy server running on port ${PORT}`);
-    console.log('Ready to forward requests to the Gemini API.');
 });
