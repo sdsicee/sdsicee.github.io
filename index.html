@@ -191,8 +191,10 @@
                 const reader = new FileReader();
                 reader.onload = async (e) => {
                     try {
-                        const decodingContext = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
-                        const buffer = await decodingContext.decodeAudioData(e.target.result);
+                        // FIX: Use a temporary AudioContext to decode the data, which preserves the original sample rate.
+                        const tempAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const buffer = await tempAudioContext.decodeAudioData(e.target.result);
+                        tempAudioContext.close(); // Close the temporary context to save resources.
                         audioBuffer = buffer;
 
                         const offlineContext = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(
@@ -359,7 +361,7 @@
                 if (audioContext && audioContext.state !== 'closed') {
                     audioContext.close();
                 }
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({sampleRate: audioBuffer.sampleRate});
                 
                 if (audioContext.state === 'suspended') {
                     audioContext.resume();
@@ -579,7 +581,7 @@ Here is the data:
 - **Muddy Frequency:** **${analysis.muddyFreq} Hz**
 - **Harsh Frequency:** **${analysis.harshFreq} Hz**
 
-Your task is to provide a step-by-step mastering guide in Markdown. You must also provide a JSON object containing the specific parameters for the audio processing chain. 
+Your task is to provide a step-by-step mastering guide in Markdown. CRITICALLY, you must also provide a JSON object containing the specific parameters for the audio processing chain. 
 
 **IMPORTANT: Do NOT mention the JSON object at all in the user-facing guide.** The guide should be friendly and explain the reasoning for the settings without referring to the technical data structure.
 
