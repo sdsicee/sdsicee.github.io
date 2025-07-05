@@ -115,7 +115,6 @@
                             <p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Click to upload</span> or drag and drop</p>
                             <p class="text-xs text-gray-500">WAV, MP3, or FLAC (Max. 250MB)</p>
                         </div>
-                        <!-- FIX: Added file extensions to the accept attribute for better mobile compatibility -->
                         <input id="audio-upload" type="file" class="hidden" accept="audio/wav, audio/mpeg, audio/flac, .wav, .mp3, .flac">
                     </label>
                 </div>
@@ -148,7 +147,7 @@
                 <div id="instructions-container" class="prose prose-invert max-w-none">
                 </div>
 
-                <div id="donation-section" class="text-center mt-8 pt-6 border-t border-gray-700">
+                <div id="donation-section" class="hidden text-center mt-8 pt-6 border-t border-gray-700">
                     <p class="text-gray-400 mb-2">If you enjoy this service, please consider donating.</p>
                     <a href="https://coff.ee/iceestudios" target="_blank" rel="noopener noreferrer" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded-lg transition-colors">
                         Buy me a coffee! ☕
@@ -177,6 +176,7 @@
         const previewOriginalBtn = document.getElementById('preview-original-btn');
         const previewMasteredBtn = document.getElementById('preview-mastered-btn');
         const downloadMasteredBtn = document.getElementById('download-mastered-btn');
+        const donationSection = document.getElementById('donation-section');
 
         let uploadedFile = null;
         let audioBuffer = null;
@@ -558,6 +558,7 @@
             instructionsContainer.innerHTML = '';
             playerControls.classList.add('hidden');
             resetBtn.classList.add('hidden');
+            donationSection.classList.add('hidden');
             
             try {
                 loadingText.textContent = 'Performing deep audio analysis...';
@@ -574,6 +575,8 @@ Here is the data:
 - **Harsh Frequency:** **${analysis.harshFreq} Hz**
 
 Your task is to provide a step-by-step mastering guide in Markdown. CRITICALLY, you must also provide a JSON object containing the specific parameters for the audio processing chain. The guide should be friendly and explain the reasoning. The JSON object must be separate and clearly formatted. Do not mention limiting or dithering.
+
+**Crucially, the settings you describe in the text guide (e.g., "a small boost at 3kHz") MUST EXACTLY MATCH the numerical values you provide in the JSON object.**
 
 **Your entire response must contain a single JSON block. Do not provide any example JSON.**
 
@@ -649,6 +652,7 @@ Your task is to provide a step-by-step mastering guide in Markdown. CRITICALLY, 
                 loadingSpinner.classList.add('hidden');
                 loadingText.textContent = "Initializing...";
                 resetBtn.classList.remove('hidden');
+                donationSection.classList.remove('hidden');
             }
         });
         
