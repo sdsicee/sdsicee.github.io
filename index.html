@@ -270,7 +270,7 @@
                             else if(avgHighs > avgMids * 1.5 && avgHighs > avgBass * 1.5) spectralProfile = "bright";
                             else if(avgMids > avgBass * 1.3 && avgMids > avgHighs * 1.3) spectralProfile = "mid-forward";
                             else if(avgMids < avgBass * 0.7 && avgMids < avgHighs * 0.7) spectralProfile = "scooped";
-                            resolve({ crestFactor, spectralProfile, muddyFreq, harshFreq });
+                            resolve({ crestFactor, spectralProfile, muddyFreq, harshFreq, peakDb });
                         }).catch(reject);
                     } catch (error) { reject(new Error("Could not decode audio file. It may be corrupt or an unsupported format.")); }
                 };
@@ -575,6 +575,7 @@
 You are a world-class audio mastering engineer AI. You have just completed a deep digital analysis of an audio track.
 
 Here is the data:
+- **Peak Level:** ${analysis.peakDb.toFixed(1)} dBFS
 - **Crest Factor:** ${analysis.crestFactor.toFixed(1)} dB
 - **Spectral Profile:** **${analysis.spectralProfile}**
 - **Muddy Frequency:** **${analysis.muddyFreq} Hz**
@@ -596,7 +597,10 @@ Your task is to provide a step-by-step mastering guide in Markdown. You must als
   - The second object's "frequency" property must be exactly **${analysis.harshFreq}**.
   - Both objects must have "q" (Number) and "gain" (Number, should be negative) properties.
 - **compressor**: An object with "threshold", "ratio", "attack", "release", and "knee" properties (all Numbers). 
-  - Base the "threshold" and "ratio" on the Crest Factor. A high crest factor (>12) needs more compression (e.g., ratio 3:1 or 4:1, lower threshold). A low crest factor (<8) needs gentle settings (e.g., ratio 2:1, higher threshold).
+  - The primary goal for compression is to apply gentle 'glue' and control peaks, with a maximum of 3dB of gain reduction.
+  - You **must** set the parameters so that the compressor applies **no more than 3dB of gain reduction**.
+  - Set a gentle "ratio", between 1.5 and 2.5.
+  - The track's peak level is ${analysis.peakDb.toFixed(1)} dBFS. You should set the "threshold" relative to this peak to achieve the target gain reduction. For example, to get 3dB of reduction at the peak with a 2:1 ratio, the threshold should be set 6dB below the peak level.
   - Base the "attack" and "release" on the Spectral Profile. For a "bass-heavy" profile, use a slower attack (30-50ms) to preserve transients. For a "bright" or "mid-forward" profile, use a faster attack (10-25ms). Set the release to be 3-5 times the attack time.
 - **tonalEQ**: An array of three objects, each with "frequency", "q", "gain", and "type" properties.
   - The first object should be a "lowshelf" with a "frequency" property around 120.
