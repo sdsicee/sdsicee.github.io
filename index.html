@@ -326,7 +326,6 @@
             if (settings.limiter) {
                 const lim = settings.limiter;
                 html += '<div class="settings-card"><h5>Loudness Maximizer</h5><ul>';
-                // UPDATED: Removed the line mentioning LUFS
                 html += `<li>Makeup Gain: +${lim.makeupGain.toFixed(1)} dB</li>`;
                 html += `<li>Ceiling: ${lim.threshold.toFixed(1)} dBFS</li>`;
                 html += `<li>Attack: ${lim.attack.toFixed(1)}ms</li>`;
@@ -579,7 +578,7 @@
                 const analysis = await analyzeAudio(uploadedFile);
                 loadingText.textContent = 'Analysis complete. Generating your custom guide...';
 
-                // UPDATED: The prompt now targets -14dBFS RMS.
+                // UPDATED: The prompt now targets -15dBFS RMS.
                 const prompt = `
 You are a world-class audio mastering engineer AI. You have just completed a deep digital analysis of an audio track.
 
@@ -617,8 +616,8 @@ Your task is to provide a step-by-step mastering guide in Markdown. You must als
   - The third object should be a "highshelf" with a "frequency" around 12000.
   - Base the "gain" values on the Spectral Profile. If the profile is "bright", add less high-shelf gain and more low-shelf. If "bass-heavy", do the opposite.
 - **limiter**: An object with "threshold", "attack", "release", and "makeupGain" properties.
-  - The target RMS level before limiting is **-14.0 dBFS**. The track's initial RMS level is **${analysis.rmsDb.toFixed(1)} dBFS**.
-  - Calculate the required "makeupGain" to bring the RMS level to the target of -14.0 dBFS. The formula is: makeupGain = -14.0 - (${analysis.rmsDb.toFixed(1)}). The final perceived loudness will be higher than this RMS value due to the density added by the limiter.
+  - The target RMS level before limiting is **-15.0 dBFS**. The track's initial RMS level is **${analysis.rmsDb.toFixed(1)} dBFS**.
+  - Calculate the required "makeupGain" to bring the RMS level to the target of -15.0 dBFS. The formula is: makeupGain = -15.0 - (${analysis.rmsDb.toFixed(1)}). The final perceived loudness will be higher than this RMS value due to the density added by the limiter.
   - The "threshold" (also known as the ceiling) must be set to **-1.0** dB to prevent digital clipping.
   - Set a fast "attack" (1-5ms) and a moderate "release" (e.g., 100-200ms).
 - "attack" and "release" values must be in milliseconds.
