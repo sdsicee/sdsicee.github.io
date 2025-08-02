@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Mastering Engine</title>
+    <title>Interactive Mastering Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -18,174 +18,149 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        #instructions-container h2 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-top: 1.75rem;
-            margin-bottom: 0.75rem;
-            border-bottom: 1px solid #4a5568;
-            padding-bottom: 0.5rem;
+        /* Custom slider styles */
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent; cursor: pointer;
         }
-        #instructions-container h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-top: 1.5rem;
-            margin-bottom: 0.5rem;
-            color: #a0aec0;
+        input[type=range]::-webkit-slider-runnable-track {
+            height: 6px; background: #4a5568; border-radius: 3px;
         }
-        #instructions-container p {
-            margin-bottom: 1rem;
-            line-height: 1.6;
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; margin-top: -5px; width: 16px; height: 16px; background: #a0aec0; border-radius: 50%; border: 2px solid #1a202c;
         }
-        #instructions-container ul {
-            list-style-type: none;
-            padding-left: 0;
+        input[type=range]:focus::-webkit-slider-thumb {
+            background: #cbd5e0; box-shadow: 0 0 5px #6366f1;
         }
-        #instructions-container li {
-            position: relative;
-            padding-left: 1.5rem;
-            margin-bottom: 0.5rem;
+        .meter-track {
+            background-color: #2d3748; height: 10px; border-radius: 5px; overflow: hidden; width: 100%; border: 1px solid #4a5568;
         }
-        #instructions-container li::before {
-            content: '•';
-            position: absolute;
-            left: 0;
-            color: #6366f1; /* Indigo */
-            font-weight: bold;
+        .meter-bar {
+            background-color: #f59e0b; height: 100%; width: 0%; transition: width 0.05s linear;
         }
-        #player-controls button:disabled {
-            background-color: #4a5568;
-            cursor: not-allowed;
-            opacity: 0.5;
+        #waveform-container {
+            position: relative; height: 100px; background-color: rgba(0,0,0,0.2); border-radius: 0.5rem; cursor: pointer; overflow: hidden;
         }
-        .settings-summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
+        #playhead {
+            position: absolute; top: 0; bottom: 0; left: 0; width: 2px; background-color: #f87171; /* Red 400 */ pointer-events: none;
         }
-        .settings-card {
-            background: rgba(0,0,0,0.2);
-            padding: 1rem;
-            border-radius: 0.5rem;
-        }
-        .settings-card h5 {
-            font-weight: bold;
-            color: #90cdf4;
-            margin-bottom: 0.5rem;
-        }
-        .settings-card ul {
-            padding-left: 1rem;
-            list-style-type: none;
-        }
-        .settings-card li {
-            margin-bottom: 0.25rem;
-            font-size: 0.875rem;
-        }
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #2d3748;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4a5568;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #718096;
-        }
+        /* Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4a5568; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #4f46e5; }
+        input:checked + .slider:before { transform: translateX(14px); }
+        .editable-span { cursor: text; position: relative; }
     </style>
 </head>
 <body class="gradient-bg text-gray-200 min-h-screen flex items-center justify-center p-4">
 
-    <div class="w-full max-w-4xl mx-auto">
+    <div class="w-full max-w-6xl mx-auto">
         <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-white tracking-tight">Interactive AI Mastering Engine</h1>
-            <p class="text-lg text-gray-400 mt-2">Analyze, get instructions, and preview your master in real-time.</p>
+            <h1 class="text-4xl md:text-5xl font-bold text-white tracking-tight">Interactive Mastering Engine</h1>
+            <p class="text-lg text-gray-400 mt-2">Analyze, get settings, then fine-tune your master in real-time.</p>
         </header>
 
         <main class="glass-card rounded-2xl shadow-2xl p-6 md:p-8">
+            <!-- Upload Section -->
             <div id="upload-section">
                 <div class="flex items-center justify-center w-full">
-                    <label for="audio-upload" class="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-500 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700/80 transition-colors">
-                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                            <svg class="w-10 h-10 mb-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                            </svg>
-                            <p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                            <p class="text-xs text-gray-500">WAV, MP3, or FLAC (Max. 250MB)</p>
-                        </div>
+                     <label for="audio-upload" class="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-500 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700/80 transition-colors">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6"><svg class="w-10 h-10 mb-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg><p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Click to upload</span> or drag and drop</p><p class="text-xs text-gray-500">WAV, MP3, or FLAC</p></div>
                         <input id="audio-upload" type="file" class="hidden" accept="audio/wav, audio/mpeg, audio/flac, .wav, .mp3, .flac">
                     </label>
                 </div>
-                <div id="file-info" class="text-center mt-4 text-gray-300 hidden">
-                    <p>File: <span id="file-name" class="font-semibold"></span></p>
-                </div>
-                 <button id="get-instructions-btn" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>
-                    Analyze and Master
-                </button>
+                <div id="file-info" class="text-center mt-4 text-gray-300 hidden"><p>File: <span id="file-name" class="font-semibold"></span></p></div>
+                 <button id="get-instructions-btn" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>Analyze and Master</button>
             </div>
 
+            <!-- Result Section -->
             <div id="result-section" class="hidden">
-                <div id="loading-spinner" class="text-center">
-                     <svg class="animate-spin h-10 w-10 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p id="loading-text" class="mt-4 text-gray-400">Initializing...</p>
-                </div>
-
-                <div id="player-controls" class="hidden text-center p-4 border-b border-gray-700 mb-4">
-                    <h3 class="text-xl font-bold mb-4">Preview & Export (24-bit WAV)</h3>
-                    <div class="flex flex-wrap justify-center gap-4">
-                        <button id="preview-original-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition-colors">Preview Original</button>
-                        <button id="preview-mastered-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">Preview Mastered</button>
-                        <button id="download-mastered-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">Download Mastered</button>
+                <div id="loading-spinner" class="text-center"><svg class="animate-spin h-10 w-10 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p id="loading-text" class="mt-4 text-gray-400">Initializing...</p></div>
+                
+                <div id="controls-wrapper" class="hidden">
+                    <!-- Player Controls -->
+                    <div id="player-controls" class="p-4 border-b border-gray-700 mb-6 space-y-4">
+                        <div class="flex flex-wrap justify-center gap-4"><button id="preview-original-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition-colors">Preview Original</button><button id="preview-mastered-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">Preview Mastered</button><button id="download-mastered-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">Download Mastered</button></div>
+                        <div id="waveform-display" class="pt-2">
+                             <div id="waveform-container"><canvas id="waveform-canvas" style="width: 100%; height: 100%;"></canvas><div id="playhead"></div></div>
+                             <div class="flex justify-between text-xs font-mono text-gray-400 mt-1"><span id="current-time">0:00</span><span id="total-time">0:00</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Effects Chain UI -->
+                    <div id="effects-chain-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                        <div class="bg-gray-800/50 p-4 rounded-lg space-y-3">
+                            <h5 class="font-bold text-indigo-400">Corrective EQ</h5>
+                            <div class="space-y-2 pt-1">
+                                <div class="flex justify-between items-center"><h6 class="text-xs font-bold uppercase text-gray-400">Band 1 (Low-Mid)</h6><label class="switch"><input type="checkbox" id="ceq-b1-enable"><span class="slider"></span></label></div>
+                                <div id="ceq-b1-controls" class="space-y-2 transition-opacity duration-300">
+                                    <div class="flex justify-between items-center text-sm"><label>Frequency</label><span id="ceq-b1-freq-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">350 Hz</span></div><input type="range" id="ceq-b1-freq" min="200" max="800" step="5" class="w-full">
+                                    <div class="flex justify-between items-center text-sm"><label>Gain</label><span id="ceq-b1-gain-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">-2.0 dB</span></div><input type="range" id="ceq-b1-gain" min="-12" max="0" step="0.1" class="w-full">
+                                    <div class="flex justify-between items-center text-sm"><label>Q</label><span id="ceq-b1-q-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">3.5</span></div><input type="range" id="ceq-b1-q" min="1" max="10" step="0.1" class="w-full">
+                                </div>
+                            </div>
+                            <div class="space-y-2 pt-2 border-t border-gray-700">
+                                <div class="flex justify-between items-center"><h6 class="text-xs font-bold uppercase text-gray-400">Band 2 (High-Mid)</h6><label class="switch"><input type="checkbox" id="ceq-b2-enable"><span class="slider"></span></label></div>
+                                <div id="ceq-b2-controls" class="space-y-2 transition-opacity duration-300">
+                                    <div class="flex justify-between items-center text-sm"><label>Frequency</label><span id="ceq-b2-freq-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">4500 Hz</span></div><input type="range" id="ceq-b2-freq" min="2000" max="7000" step="50" class="w-full">
+                                    <div class="flex justify-between items-center text-sm"><label>Gain</label><span id="ceq-b2-gain-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">-1.5 dB</span></div><input type="range" id="ceq-b2-gain" min="-12" max="0" step="0.1" class="w-full">
+                                    <div class="flex justify-between items-center text-sm"><label>Q</label><span id="ceq-b2-q-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">4.0</span></div><input type="range" id="ceq-b2-q" min="1" max="10" step="0.1" class="w-full">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800/50 p-4 rounded-lg space-y-3">
+                            <h5 class="font-bold text-indigo-400">Compressor</h5>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center text-sm"><label>Threshold</label><span id="comp-threshold-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">-18.0 dB</span></div><input type="range" id="comp-threshold" min="-40" max="0" step="0.5" class="w-full">
+                                <div class="flex justify-between items-center text-sm"><label>Ratio</label><span id="comp-ratio-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">2.0 : 1</span></div><input type="range" id="comp-ratio" min="1" max="10" step="0.1" class="w-full">
+                                <div class="flex justify-between items-center text-sm"><label>Attack</label><span id="comp-attack-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">25 ms</span></div><input type="range" id="comp-attack" min="1" max="100" step="1" class="w-full">
+                                <div class="flex justify-between items-center text-sm"><label>Release</label><span id="comp-release-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">100 ms</span></div><input type="range" id="comp-release" min="10" max="500" step="5" class="w-full">
+                            </div>
+                            <div class="pt-2"><div class="text-sm mb-1 text-gray-400">Gain Reduction</div><div class="flex items-center gap-2"><div class="meter-track flex-grow"><div id="comp-gr-meter" class="meter-bar"></div></div><span id="comp-gr-val" class="w-16 text-right font-mono text-sm text-amber-400">-0.0 dB</span></div></div>
+                        </div>
+                        <div class="bg-gray-800/50 p-4 rounded-lg space-y-3">
+                            <h5 class="font-bold text-indigo-400">Tonal EQ</h5>
+                            <div id="tonal-eq-controls" class="space-y-3">
+                                <div class="space-y-2"><h6 class="text-xs font-bold uppercase text-gray-400">Low Shelf (@ 120Hz)</h6><div class="flex justify-between items-center text-sm"><label>Gain</label><span id="teq-low-gain-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">0.0 dB</span></div><input type="range" id="teq-low-gain" min="-6" max="6" step="0.1" class="w-full"></div>
+                                <div class="space-y-2"><h6 class="text-xs font-bold uppercase text-gray-400">Mid Peak (@ 1.8kHz)</h6><div class="flex justify-between items-center text-sm"><label>Gain</label><span id="teq-mid-gain-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">0.0 dB</span></div><input type="range" id="teq-mid-gain" min="-6" max="6" step="0.1" class="w-full"><div class="flex justify-between items-center text-sm"><label>Q</label><span id="teq-mid-q-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">1.5</span></div><input type="range" id="teq-mid-q" min="0.5" max="5" step="0.1" class="w-full"></div>
+                                <div class="space-y-2"><h6 class="text-xs font-bold uppercase text-gray-400">High Shelf (@ 12kHz)</h6><div class="flex justify-between items-center text-sm"><label>Gain</label><span id="teq-high-gain-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">0.0 dB</span></div><input type="range" id="teq-high-gain" min="-6" max="6" step="0.1" class="w-full"></div>
+                            </div>
+                            <div id="hpf-display" class="text-xs text-center text-gray-500 pt-2"></div>
+                        </div>
+                        <div class="bg-gray-800/50 p-4 rounded-lg space-y-3">
+                            <h5 class="font-bold text-indigo-400">Loudness Maximizer</h5>
+                            <div class="space-y-2"><div class="flex justify-between items-center text-sm"><label>Makeup Gain</label><span id="limiter-gain-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">3.5 dB</span></div><input type="range" id="limiter-gain" min="0" max="12" step="0.1" class="w-full"></div>
+                            <div class="pt-2 mt-auto"><div class="text-sm mb-1 text-gray-400">Gain Reduction</div><div class="flex items-center gap-2"><div class="meter-track flex-grow"><div id="limiter-gr-meter" class="meter-bar"></div></div><span id="limiter-gr-val" class="w-16 text-right font-mono text-sm text-amber-400">-0.0 dB</span></div></div>
+                        </div>
                     </div>
                 </div>
 
-                <div id="instructions-container" class="prose prose-invert max-w-none">
-                </div>
-
-                <div id="donation-section" class="hidden text-center mt-8 pt-6 border-t border-gray-700">
-                    <p class="text-gray-400 mb-2">If you enjoy this service, please consider donating.</p>
-                    <a href="https://coff.ee/iceestudios" target="_blank" rel="noopener noreferrer" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded-lg transition-colors">
-                        Buy me a coffee! ☕
-                    </a>
-                </div>
-
-                <button id="reset-btn" class="w-full mt-4 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 hidden">
-                    Start Over
-                </button>
+                <div id="donation-section" class="hidden text-center mt-8 pt-6 border-t border-gray-700"><p class="text-gray-400 mb-2">If you enjoy this service, please consider donating.</p><a href="https://coff.ee/iceestudios" target="_blank" rel="noopener noreferrer" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded-lg transition-colors">Buy me a coffee! ☕</a></div>
+                <button id="reset-btn" class="w-full mt-8 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 hidden">Start Over</button>
             </div>
         </main>
     </div>
 
     <script>
-        const uploadSection = document.getElementById('upload-section');
-        const resultSection = document.getElementById('result-section');
-        const audioUpload = document.getElementById('audio-upload');
-        const getInstructionsBtn = document.getElementById('get-instructions-btn');
-        const fileInfo = document.getElementById('file-info');
-        const fileNameEl = document.getElementById('file-name');
-        const loadingSpinner = document.getElementById('loading-spinner');
-        const loadingText = document.getElementById('loading-text');
-        const instructionsContainer = document.getElementById('instructions-container');
-        const resetBtn = document.getElementById('reset-btn');
-        const playerControls = document.getElementById('player-controls');
-        const previewOriginalBtn = document.getElementById('preview-original-btn');
-        const previewMasteredBtn = document.getElementById('preview-mastered-btn');
-        const downloadMasteredBtn = document.getElementById('download-mastered-btn');
-        const donationSection = document.getElementById('donation-section');
+        // --- UI Elements ---
+        const ui = {
+            uploadSection: document.getElementById('upload-section'), resultSection: document.getElementById('result-section'), audioUpload: document.getElementById('audio-upload'), getInstructionsBtn: document.getElementById('get-instructions-btn'), fileInfo: document.getElementById('file-info'), fileNameEl: document.getElementById('file-name'), loadingSpinner: document.getElementById('loading-spinner'), loadingText: document.getElementById('loading-text'), resetBtn: document.getElementById('reset-btn'), playerControls: document.getElementById('player-controls'), previewOriginalBtn: document.getElementById('preview-original-btn'), previewMasteredBtn: document.getElementById('preview-mastered-btn'), downloadMasteredBtn: document.getElementById('download-mastered-btn'), donationSection: document.getElementById('donation-section'), controlsWrapper: document.getElementById('controls-wrapper'),
+            waveformContainer: document.getElementById('waveform-container'), waveformCanvas: document.getElementById('waveform-canvas'), playhead: document.getElementById('playhead'), currentTime: document.getElementById('current-time'), totalTime: document.getElementById('total-time'),
+            ceq: { 
+                b1: { enable: document.getElementById('ceq-b1-enable'), controls: document.getElementById('ceq-b1-controls'), freqSlider: document.getElementById('ceq-b1-freq'), freqVal: document.getElementById('ceq-b1-freq-val'), gainSlider: document.getElementById('ceq-b1-gain'), gainVal: document.getElementById('ceq-b1-gain-val'), qSlider: document.getElementById('ceq-b1-q'), qVal: document.getElementById('ceq-b1-q-val') },
+                b2: { enable: document.getElementById('ceq-b2-enable'), controls: document.getElementById('ceq-b2-controls'), freqSlider: document.getElementById('ceq-b2-freq'), freqVal: document.getElementById('ceq-b2-freq-val'), gainSlider: document.getElementById('ceq-b2-gain'), gainVal: document.getElementById('ceq-b2-gain-val'), qSlider: document.getElementById('ceq-b2-q'), qVal: document.getElementById('ceq-b2-q-val') }
+            },
+            comp: { thresholdSlider: document.getElementById('comp-threshold'), thresholdVal: document.getElementById('comp-threshold-val'), ratioSlider: document.getElementById('comp-ratio'), ratioVal: document.getElementById('comp-ratio-val'), attackSlider: document.getElementById('comp-attack'), attackVal: document.getElementById('comp-attack-val'), releaseSlider: document.getElementById('comp-release'), releaseVal: document.getElementById('comp-release-val'), grMeter: document.getElementById('comp-gr-meter'), grVal: document.getElementById('comp-gr-val') },
+            teq: { lowGainSlider: document.getElementById('teq-low-gain'), lowGainVal: document.getElementById('teq-low-gain-val'), midGainSlider: document.getElementById('teq-mid-gain'), midGainVal: document.getElementById('teq-mid-gain-val'), midQSlider: document.getElementById('teq-mid-q'), midQVal: document.getElementById('teq-mid-q-val'), highGainSlider: document.getElementById('teq-high-gain'), highGainVal: document.getElementById('teq-high-gain-val'), hpfDisplay: document.getElementById('hpf-display') },
+            limiter: { gainSlider: document.getElementById('limiter-gain'), gainVal: document.getElementById('limiter-gain-val'), grMeter: document.getElementById('limiter-gr-meter'), grVal: document.getElementById('limiter-gr-val') }
+        };
 
-        let uploadedFile = null;
-        let audioBuffer = null;
-        let masteringSettings = null;
-        let audioContext = null;
-        let currentSource = null;
-        let lastPlayedType = null;
-        let isPlaying = false;
-
+        // --- State Variables ---
+        let uploadedFile = null, audioBuffer = null, masteringSettings = null, audioContext = null, currentSource = null, lastPlayedType = null, isPlaying = false, activeAudioNodes = null, isMetering = false, animationFrameId = null;
+        let playbackStartTime = 0, startOffset = 0;
+        
+        // --- AUDIO ANALYSIS ---
         const analyzeAudio = (file) => {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -195,82 +170,63 @@
                         const buffer = await tempAudioContext.decodeAudioData(e.target.result);
                         tempAudioContext.close();
                         audioBuffer = buffer;
-
-                        const offlineContext = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(
-                            buffer.numberOfChannels, buffer.length, buffer.sampleRate
-                        );
+                        const offlineContext = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
                         const source = offlineContext.createBufferSource();
                         source.buffer = buffer;
                         const analyser = offlineContext.createAnalyser();
-                        analyser.fftSize = 4096;
-                        const scriptProcessor = offlineContext.createScriptProcessor(4096, 1, 1);
-                        const freqData = new Uint8Array(analyser.frequencyBinCount);
-                        let chunkCount = 0;
-                        const avgFreqData = new Float32Array(analyser.frequencyBinCount).fill(0);
-                        scriptProcessor.onaudioprocess = () => {
+                        analyser.fftSize = 8192;
+                        const rmsValues = [], freqData = new Uint8Array(analyser.frequencyBinCount), avgFreqData = new Float32Array(analyser.frequencyBinCount).fill(0);
+                        let processCount = 0;
+                        const scriptProcessor = offlineContext.createScriptProcessor(4096, buffer.numberOfChannels, 1);
+                        scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
                             analyser.getByteFrequencyData(freqData);
-                            for (let i = 0; i < analyser.frequencyBinCount; i++) {
-                                avgFreqData[i] += freqData[i];
+                            for (let i = 0; i < analyser.frequencyBinCount; i++) avgFreqData[i] += freqData[i];
+                            processCount++;
+                            const inputBuffer = audioProcessingEvent.inputBuffer;
+                            for (let channel = 0; channel < inputBuffer.numberOfChannels; channel++) {
+                                const channelData = inputBuffer.getChannelData(channel);
+                                let sumOfSquares = 0;
+                                for (let i = 0; i < channelData.length; i++) sumOfSquares += channelData[i] * channelData[i];
+                                const rms = Math.sqrt(sumOfSquares / channelData.length);
+                                if (rms > 0) rmsValues.push(20 * Math.log10(rms));
                             }
-                            chunkCount++;
                         };
                         source.connect(analyser);
                         analyser.connect(scriptProcessor);
                         scriptProcessor.connect(offlineContext.destination);
                         source.start(0);
-
                         offlineContext.startRendering().then(() => {
-                            if (chunkCount > 0) {
-                                for (let i = 0; i < analyser.frequencyBinCount; i++) {
-                                    avgFreqData[i] /= chunkCount;
+                            const sortedRms = rmsValues.filter(v => isFinite(v)).sort((a, b) => a - b);
+                            const loudnessRange = sortedRms.length > 10 ? sortedRms[Math.floor(sortedRms.length * 0.95)] - sortedRms[Math.floor(sortedRms.length * 0.10)] : 8;
+                            let peak = 0;
+                            for (let i = 0; i < buffer.numberOfChannels; i++) {
+                                const pcmData = buffer.getChannelData(i);
+                                for (let j = 0; j < pcmData.length; j++) {
+                                    const sample = Math.abs(pcmData[j]);
+                                    if (sample > peak) peak = sample;
                                 }
                             }
-                            const pcmData = buffer.getChannelData(0);
-                            let peak = 0, sumOfSquares = 0;
-                            for (let i = 0; i < pcmData.length; i++) {
-                                const sample = Math.abs(pcmData[i]);
-                                if (sample > peak) peak = sample;
-                                sumOfSquares += pcmData[i] * pcmData[i];
-                            }
-                            const rms = Math.sqrt(sumOfSquares / pcmData.length);
-                            
                             const peakDb = peak > 0 ? 20 * Math.log10(peak) : -144;
-                            const rmsDb = rms > 0 ? 20 * Math.log10(rms) : -144;
-                            const crestFactor = peakDb - rmsDb;
-
-                            const sampleRate = offlineContext.sampleRate;
+                            if (processCount > 0) for (let i = 0; i < analyser.frequencyBinCount; i++) avgFreqData[i] /= processCount;
+                            const getAvgEnergy = (startFreq, endFreq) => {
+                                const startIndex = Math.round(startFreq / buffer.sampleRate * analyser.fftSize), endIndex = Math.round(endFreq / buffer.sampleRate * analyser.fftSize);
+                                let sum = 0;
+                                for (let i = startIndex; i <= endIndex; i++) sum += avgFreqData[i];
+                                return sum / (endIndex - startIndex + 1);
+                            };
+                            const spectralBands = { subBass: getAvgEnergy(20, 60), midBass: getAvgEnergy(60, 200), lowMids: getAvgEnergy(200, 500), midRange: getAvgEnergy(500, 3000), presence: getAvgEnergy(3000, 6000), air: getAvgEnergy(10000, 20000) };
                             const findPeakInRange = (startFreq, endFreq) => {
                                 let maxVal = -1, peakFreq = -1;
-                                const startIndex = Math.round(startFreq / sampleRate * analyser.fftSize);
-                                const endIndex = Math.round(endFreq / sampleRate * analyser.fftSize);
+                                const startIndex = Math.round(startFreq / buffer.sampleRate * analyser.fftSize), endIndex = Math.round(endFreq / buffer.sampleRate * analyser.fftSize);
                                 for (let i = startIndex; i <= endIndex; i++) {
                                     if (avgFreqData[i] > maxVal) {
                                         maxVal = avgFreqData[i];
-                                        peakFreq = Math.round(i * sampleRate / analyser.fftSize);
+                                        peakFreq = Math.round(i * buffer.sampleRate / analyser.fftSize);
                                     }
                                 }
                                 return peakFreq;
                             };
-                            const muddyFreq = findPeakInRange(200, 500);
-                            const harshFreq = findPeakInRange(3000, 6000);
-                            let spectralProfile = "balanced";
-                            const bands = { bass: 0, mids: 0, highs: 0 };
-                            let counts = { bass: 0, mids: 0, highs: 0 };
-                            for(let i=0; i<analyser.frequencyBinCount; i++) {
-                                const freq = i * sampleRate / analyser.fftSize;
-                                const value = avgFreqData[i];
-                                if (freq <= 250) { bands.bass += value; counts.bass++; }
-                                else if (freq <= 4000) { bands.mids += value; counts.mids++; }
-                                else { bands.highs += value; counts.highs++; }
-                            }
-                            const avgBass = counts.bass > 0 ? bands.bass / counts.bass : 0;
-                            const avgMids = counts.mids > 0 ? bands.mids / counts.mids : 0;
-                            const avgHighs = counts.highs > 0 ? bands.highs / counts.highs : 0;
-                            if(avgBass > avgMids * 1.5 && avgBass > avgHighs * 1.5) spectralProfile = "bass-heavy";
-                            else if(avgHighs > avgMids * 1.5 && avgHighs > avgBass * 1.5) spectralProfile = "bright";
-                            else if(avgMids > avgBass * 1.3 && avgMids > avgHighs * 1.3) spectralProfile = "mid-forward";
-                            else if(avgMids < avgBass * 0.7 && avgMids < avgHighs * 0.7) spectralProfile = "scooped";
-                            resolve({ crestFactor, spectralProfile, muddyFreq, harshFreq, peakDb, rmsDb });
+                            resolve({ peakDb, loudnessRange, spectralBands, muddyFreq: findPeakInRange(200, 500), harshFreq: findPeakInRange(3000, 6000) });
                         }).catch(reject);
                     } catch (error) { reject(new Error("Could not decode audio file. It may be corrupt or an unsupported format.")); }
                 };
@@ -279,428 +235,176 @@
             });
         };
 
-        const parseSettingsFromMarkdown = (markdown) => {
-            const jsonBlockRegex = /```json\s*([\s\S]*?)\s*```/;
-            const match = markdown.match(jsonBlockRegex);
-            if (match && match[1]) {
-                try {
-                    return JSON.parse(match[1]);
-                } catch (e) {
-                    console.error("Failed to parse JSON settings block:", e);
-                    return null;
-                }
-            }
-            return null;
+        // --- SETTINGS GENERATOR ---
+        const generateMasteringSettings = (analysis) => {
+            const correctiveEQ = {
+                band1: { active: analysis.spectralBands.lowMids > 110 && analysis.muddyFreq > 0, frequency: analysis.muddyFreq || 350, gain: -2.0, q: 3.5 },
+                band2: { active: analysis.spectralBands.presence > 100 && analysis.harshFreq > 0, frequency: analysis.harshFreq || 4500, gain: -1.5, q: 4.0 }
+            };
+            const compressor = { threshold: -18.0, ratio: analysis.loudnessRange > 10 ? 2.0 : 1.5, attack: analysis.peakDb > -3 ? 50 : 25, release: (analysis.peakDb > -3 ? 50 : 25) * 4 };
+            const tonalEQ = {
+                highPass: { active: analysis.spectralBands.subBass > 95, frequency: 30 },
+                lowShelf: { frequency: 120, gain: analysis.spectralBands.midBass < 85 ? 1.0 : -0.5 },
+                midPeak: { frequency: 1800, gain: analysis.spectralBands.midRange < 75 ? 1.0 : 0, q: 1.5 },
+                highShelf: { frequency: 12000, gain: analysis.spectralBands.air < 35 ? 1.5 : -0.5 }
+            };
+            const limiter = { threshold: -1.0, makeupGain: analysis.loudnessRange > 12 ? 5.0 : (analysis.loudnessRange > 8 ? 3.5 : 2.0) };
+            return { correctiveEQ, compressor, tonalEQ, limiter };
         };
-        
-        const createSettingsSummaryHTML = (settings) => {
-            let html = '<div class="bg-gray-800 p-4 rounded-lg my-4"><h4 class="font-bold text-lg text-indigo-400 mb-4">Applied Settings Summary</h4><div class="settings-summary-grid">';
 
-            if (settings.correctiveEQ) {
-                html += '<div class="settings-card"><h5>Corrective EQ</h5><ul>';
-                settings.correctiveEQ.forEach(eq => {
-                    html += `<li>Cut ${Math.abs(eq.gain).toFixed(1)}dB @ ${eq.frequency}Hz (Q: ${eq.q})</li>`;
-                });
-                html += '</ul></div>';
-            }
-            if (settings.compressor) {
-                const comp = settings.compressor;
-                html += '<div class="settings-card"><h5>Compressor</h5><ul>';
-                html += `<li>Threshold: ${comp.threshold.toFixed(1)}dB</li>`;
-                html += `<li>Ratio: ${comp.ratio.toFixed(1)}:1</li>`;
-                html += `<li>Attack: ${comp.attack}ms</li>`;
-                html += `<li>Release: ${comp.release}ms</li>`;
-                if (isFinite(comp.knee)) {
-                    html += `<li>Knee: ${comp.knee.toFixed(1)}dB</li>`;
-                }
-                html += '</ul></div>';
-            }
-            if (settings.tonalEQ) {
-                html += '<div class="settings-card"><h5>Tonal EQ</h5><ul>';
-                settings.tonalEQ.forEach(eq => {
-                    const action = eq.gain > 0 ? 'Boost' : 'Cut';
-                    html += `<li>${action} ${Math.abs(eq.gain).toFixed(1)}dB @ ${eq.frequency}Hz (${eq.type})</li>`;
-                });
-                html += '</ul></div>';
-            }
-            if (settings.limiter) {
-                const lim = settings.limiter;
-                html += '<div class="settings-card"><h5>Loudness Maximizer</h5><ul>';
-                html += `<li>Makeup Gain: +${lim.makeupGain.toFixed(1)} dB</li>`;
-                html += `<li>Ceiling: ${lim.threshold.toFixed(1)} dBFS</li>`;
-                html += `<li>Attack: ${lim.attack.toFixed(1)}ms</li>`;
-                html += `<li>Release: ${lim.release.toFixed(1)}ms</li>`;
-                html += '</ul></div>';
-            }
-
-            html += '</div></div>';
-            return html;
-        };
-        
-        function applyMasteringChain(context, sourceNode, settings) {
-            let lastNode = sourceNode;
-            if (!settings) return lastNode;
-
-            const now = context.currentTime;
-
-            if (settings.correctiveEQ) {
-                settings.correctiveEQ.forEach(eq => {
-                    if (isFinite(eq.frequency) && isFinite(eq.q) && isFinite(eq.gain)) {
-                        const filter = context.createBiquadFilter();
-                        filter.type = 'peaking';
-                        filter.frequency.setValueAtTime(eq.frequency, now);
-                        filter.Q.setValueAtTime(eq.q, now);
-                        filter.gain.setValueAtTime(eq.gain, now);
-                        lastNode.connect(filter);
-                        lastNode = filter;
-                    }
-                });
-            }
-            if (settings.compressor) {
-                const comp = settings.compressor;
-                const compressor = context.createDynamicsCompressor();
-                if(isFinite(comp.threshold)) compressor.threshold.setValueAtTime(comp.threshold, now);
-                if(isFinite(comp.ratio)) compressor.ratio.setValueAtTime(comp.ratio, now);
-                if(isFinite(comp.attack)) compressor.attack.setValueAtTime(comp.attack / 1000, now);
-                if(isFinite(comp.release)) compressor.release.setValueAtTime(comp.release / 1000, now);
-                if(isFinite(comp.knee)) compressor.knee.setValueAtTime(comp.knee, now);
-                lastNode.connect(compressor);
-                lastNode = compressor;
-            }
-            if (settings.tonalEQ) {
-                settings.tonalEQ.forEach(eq => {
-                    if (isFinite(eq.frequency) && isFinite(eq.gain) && eq.type) {
-                        const filter = context.createBiquadFilter();
-                        filter.type = eq.type;
-                        filter.frequency.setValueAtTime(eq.frequency, now);
-                        if(isFinite(eq.q)) filter.Q.setValueAtTime(eq.q, now);
-                        filter.gain.setValueAtTime(eq.gain, now);
-                        lastNode.connect(filter);
-                        lastNode = filter;
-                    }
-                });
-            }
-            if (settings.limiter) {
-                const lim = settings.limiter;
-                if (isFinite(lim.makeupGain) && lim.makeupGain > 0) {
-                    const makeupGainNode = context.createGain();
-                    makeupGainNode.gain.setValueAtTime(Math.pow(10, lim.makeupGain / 20), now);
-                    lastNode.connect(makeupGainNode);
-                    lastNode = makeupGainNode;
-                }
-                const limiterNode = context.createDynamicsCompressor();
-                if(isFinite(lim.threshold)) limiterNode.threshold.setValueAtTime(lim.threshold, now);
-                limiterNode.knee.setValueAtTime(0, now);
-                limiterNode.ratio.setValueAtTime(20, now);
-                if(isFinite(lim.attack)) limiterNode.attack.setValueAtTime(lim.attack / 1000, now);
-                if(isFinite(lim.release)) limiterNode.release.setValueAtTime(lim.release / 1000, now);
-                lastNode.connect(limiterNode);
-                lastNode = limiterNode;
-            }
-            return lastNode;
+        // --- UI & INTERACTIVITY ---
+        function populateUI(settings) {
+            const { ceq, comp, teq, limiter } = ui;
+            const { correctiveEQ, compressor, tonalEQ, limiter: limiterSettings } = settings;
+            const setupBandUI = (bandData, bandUI) => {
+                bandUI.enable.checked = bandData.active;
+                bandUI.freqSlider.value = bandData.frequency;
+                bandUI.freqVal.textContent = `${bandData.frequency} Hz`;
+                bandUI.gainSlider.value = bandData.gain;
+                bandUI.gainVal.textContent = `${bandData.gain.toFixed(1)} dB`;
+                bandUI.qSlider.value = bandData.q;
+                bandUI.qVal.textContent = bandData.q.toFixed(1);
+                bandUI.controls.style.opacity = bandData.active ? '1' : '0.5';
+                bandUI.controls.style.pointerEvents = bandData.active ? 'auto' : 'none';
+            };
+            setupBandUI(correctiveEQ.band1, ceq.b1);
+            setupBandUI(correctiveEQ.band2, ceq.b2);
+            comp.thresholdSlider.value = compressor.threshold;
+            comp.thresholdVal.textContent = `${compressor.threshold.toFixed(1)} dB`;
+            comp.ratioSlider.value = compressor.ratio;
+            comp.ratioVal.textContent = `${compressor.ratio.toFixed(1)} : 1`;
+            comp.attackSlider.value = compressor.attack;
+            comp.attackVal.textContent = `${compressor.attack.toFixed(0)} ms`;
+            comp.releaseSlider.value = compressor.release;
+            comp.releaseVal.textContent = `${compressor.release.toFixed(0)} ms`;
+            teq.hpfDisplay.textContent = tonalEQ.highPass.active ? `High-Pass Filter @ ${tonalEQ.highPass.frequency}Hz` : '';
+            teq.lowGainSlider.value = tonalEQ.lowShelf.gain;
+            teq.lowGainVal.textContent = `${tonalEQ.lowShelf.gain.toFixed(1)} dB`;
+            teq.midGainSlider.value = tonalEQ.midPeak.gain;
+            teq.midGainVal.textContent = `${tonalEQ.midPeak.gain.toFixed(1)} dB`;
+            teq.midQSlider.value = tonalEQ.midPeak.q;
+            teq.midQVal.textContent = `${tonalEQ.midPeak.q.toFixed(1)}`;
+            teq.highGainSlider.value = tonalEQ.highShelf.gain;
+            teq.highGainVal.textContent = `${tonalEQ.highShelf.gain.toFixed(1)} dB`;
+            limiter.gainSlider.value = limiterSettings.makeupGain;
+            limiter.gainVal.textContent = `+${limiterSettings.makeupGain.toFixed(1)} dB`;
         }
-
-
-        const updatePlayButtonStates = () => {
-            if (isPlaying) {
-                if (lastPlayedType === 'original') {
-                    previewOriginalBtn.textContent = 'Pause';
-                    previewMasteredBtn.textContent = 'Preview Mastered';
-                } else {
-                    previewMasteredBtn.textContent = 'Pause';
-                    previewOriginalBtn.textContent = 'Preview Original';
-                }
-            } else {
-                previewOriginalBtn.textContent = 'Preview Original';
-                previewMasteredBtn.textContent = 'Preview Mastered';
-            }
-        };
-
-        const togglePlayback = (type) => {
-            if (!audioBuffer) return;
-
-            if (isPlaying && lastPlayedType === type) {
-                if (audioContext && audioContext.state === 'running') {
-                    audioContext.suspend();
-                }
-                isPlaying = false;
-            } 
-            else if (!isPlaying && audioContext && audioContext.state === 'suspended' && lastPlayedType === type) {
-                audioContext.resume();
-                isPlaying = true;
-            } 
-            else {
-                if (audioContext && audioContext.state !== 'closed') {
-                    audioContext.close();
-                }
-                audioContext = new (window.AudioContext || window.webkitAudioContext)({sampleRate: audioBuffer.sampleRate});
+        
+        function makeSpanEditable(span, slider, config) {
+            span.addEventListener('click', () => {
+                const originalValue = parseFloat(slider.value);
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'bg-slate-900 text-white text-center font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded p-0 m-0';
+                input.style.width = `${span.offsetWidth + 2}px`;
+                input.style.height = `${span.offsetHeight}px`;
+                input.value = parseFloat(originalValue).toFixed(config.step.toString().includes('.') ? 1 : 0);
+                input.min = config.min;
+                input.max = config.max;
+                input.step = config.step;
                 
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-                
-                const source = audioContext.createBufferSource();
-                source.buffer = audioBuffer;
-                currentSource = source;
+                span.style.display = 'none';
+                span.parentElement.appendChild(input);
+                input.focus();
+                input.select();
 
-                let lastNode = source;
-                if (type === 'mastered' && masteringSettings) {
-                    try {
-                       lastNode = applyMasteringChain(audioContext, source, masteringSettings);
-                    } catch (e) {
-                        console.error("Error applying mastering chain, playing original. Error:", e);
-                        lastNode = source;
+                const commitChange = () => {
+                    let newValue = parseFloat(input.value);
+                    if (isNaN(newValue)) {
+                        newValue = originalValue;
+                    } else {
+                        newValue = Math.max(config.min, Math.min(config.max, newValue));
                     }
-                }
-                lastNode.connect(audioContext.destination);
-                source.start(0);
-                isPlaying = true;
-                lastPlayedType = type;
-                source.onended = () => {
-                    isPlaying = false;
-                    lastPlayedType = null;
-                    if (audioContext && audioContext.state !== 'closed') {
-                        audioContext.close();
+                    config.update(newValue);
+                    if (input.parentElement) {
+                        input.remove();
+                        span.style.display = '';
                     }
-                    updatePlayButtonStates();
                 };
-            }
-            updatePlayButtonStates();
-        };
-
-        const exportMasteredFile = async () => {
-            if (!audioBuffer || !masteringSettings) return;
-            downloadMasteredBtn.disabled = true;
-            downloadMasteredBtn.textContent = 'Exporting...';
-            try {
-                const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate);
-                const source = offlineCtx.createBufferSource();
-                source.buffer = audioBuffer;
                 
-                const finalNode = applyMasteringChain(offlineCtx, source, masteringSettings);
-                finalNode.connect(offlineCtx.destination);
-                
-                source.start(0);
-
-                const renderedBuffer = await offlineCtx.startRendering();
-                const wavBlob = bufferToWave(renderedBuffer, 24); // Request 24-bit export
-                const url = URL.createObjectURL(wavBlob);
-                const a = document.createElement('a');
-                a.style.display = 'none'; a.href = url; a.download = 'mastered-track-24bit.wav';
-                document.body.appendChild(a); a.click();
-                window.URL.revokeObjectURL(url); a.remove();
-            } catch (e) {
-                console.error("Export failed:", e);
-                alert("Sorry, the export failed.");
-            } finally {
-                downloadMasteredBtn.disabled = false;
-                downloadMasteredBtn.textContent = 'Download Mastered';
-            }
-        };
-
-        function bufferToWave(audioBuffer, bitDepth = 24) {
-            const numChannels = audioBuffer.numberOfChannels;
-            const sampleRate = audioBuffer.sampleRate;
-            const numFrames = audioBuffer.length;
-            const bytesPerSample = bitDepth / 8;
-
-            const headerSize = 44;
-            const dataSize = numFrames * numChannels * bytesPerSample;
-            const fileSize = headerSize + dataSize;
-            
-            const buffer = new ArrayBuffer(fileSize);
-            const view = new DataView(buffer);
-
-            let pos = 0;
-
-            view.setUint8(pos++, 0x52); view.setUint8(pos++, 0x49); view.setUint8(pos++, 0x46); view.setUint8(pos++, 0x46);
-            view.setUint32(pos, fileSize - 8, true); pos += 4;
-            view.setUint8(pos++, 0x57); view.setUint8(pos++, 0x41); view.setUint8(pos++, 0x56); view.setUint8(pos++, 0x45);
-            view.setUint8(pos++, 0x66); view.setUint8(pos++, 0x6D); view.setUint8(pos++, 0x74); view.setUint8(pos++, 0x20);
-            view.setUint32(pos, 16, true); pos += 4;
-            view.setUint16(pos, 1, true); pos += 2;
-            view.setUint16(pos, numChannels, true); pos += 2;
-            view.setUint32(pos, sampleRate, true); pos += 4;
-            view.setUint32(pos, sampleRate * numChannels * bytesPerSample, true); pos += 4;
-            view.setUint16(pos, numChannels * bytesPerSample, true); pos += 2;
-            view.setUint16(pos, bitDepth, true); pos += 2;
-            view.setUint8(pos++, 0x64); view.setUint8(pos++, 0x61); view.setUint8(pos++, 0x74); view.setUint8(pos++, 0x61);
-            view.setUint32(pos, dataSize, true); pos += 4;
-
-            const channels = [];
-            for (let i = 0; i < numChannels; i++) {
-                channels.push(audioBuffer.getChannelData(i));
-            }
-
-            const maxInt = 8388607; // 2^(24-1) - 1
-            
-            for (let i = 0; i < numFrames; i++) {
-                for (let j = 0; j < numChannels; j++) {
-                    const floatSample = channels[j][i];
-                    const clampedSample = Math.max(-1.0, Math.min(1.0, floatSample));
-                    let intSample = Math.round(clampedSample * maxInt);
-                    view.setUint8(pos++, intSample & 0xff);
-                    view.setUint8(pos++, (intSample >> 8) & 0xff);
-                    view.setUint8(pos++, (intSample >> 16) & 0xff);
-                }
-            }
-
-            return new Blob([view], { type: 'audio/wav' });
+                input.addEventListener('blur', commitChange);
+                input.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        commitChange();
+                    } else if (e.key === 'Escape') {
+                        input.remove();
+                        span.style.display = '';
+                    }
+                });
+            });
         }
 
-
-        previewOriginalBtn.addEventListener('click', () => togglePlayback('original'));
-        previewMasteredBtn.addEventListener('click', () => togglePlayback('mastered'));
-        downloadMasteredBtn.addEventListener('click', exportMasteredFile);
-
-        audioUpload.addEventListener('change', (event) => {
-            const files = event.target.files;
-            if (files.length > 0) {
-                uploadedFile = files[0];
-                fileNameEl.textContent = uploadedFile.name;
-                fileInfo.classList.remove('hidden');
-                getInstructionsBtn.disabled = false;
-            }
-        });
-
-        getInstructionsBtn.addEventListener('click', async () => {
-            if (!uploadedFile) return;
-            uploadSection.classList.add('hidden');
-            resultSection.classList.remove('hidden');
-            loadingSpinner.classList.remove('hidden');
-            instructionsContainer.innerHTML = '';
-            playerControls.classList.add('hidden');
-            resetBtn.classList.add('hidden');
-            donationSection.classList.add('hidden');
-            
-            try {
-                loadingText.textContent = 'Performing deep audio analysis...';
-                const analysis = await analyzeAudio(uploadedFile);
-                loadingText.textContent = 'Analysis complete. Generating your custom guide...';
-
-                // UPDATED: The prompt now targets -15dBFS RMS.
-                const prompt = `
-You are a world-class audio mastering engineer AI. You have just completed a deep digital analysis of an audio track.
-
-Here is the data:
-- **Peak Level:** ${analysis.peakDb.toFixed(1)} dBFS
-- **RMS Level (Loudness proxy):** ${analysis.rmsDb.toFixed(1)} dBFS
-- **Crest Factor:** ${analysis.crestFactor.toFixed(1)} dB
-- **Spectral Profile:** **${analysis.spectralProfile}**
-- **Muddy Frequency:** **${analysis.muddyFreq} Hz**
-- **Harsh Frequency:** **${analysis.harshFreq} Hz**
-
-Your task is to provide a step-by-step mastering guide in Markdown. You must also provide a JSON object containing the specific parameters for the audio processing chain. The final stage of this chain MUST be a limiter to bring the track to a competitive loudness for streaming platforms.
-
-**IMPORTANT: Do NOT mention the JSON object at all in the user-facing guide.** The guide should be friendly and explain the reasoning for the settings without referring to the technical data structure.
-
-**Crucially, the settings you describe in the text guide (e.g., "a small boost at 3kHz") MUST EXACTLY MATCH the numerical values you provide in the JSON object. When describing the Tonal EQ, you MUST use the word 'boost' if the 'gain' value is positive, and 'cut' if the 'gain' value is negative.**
-
-**Your entire response must contain a single JSON block. Do not provide any example JSON.**
-
-**RULES FOR THE JSON YOU GENERATE:**
-- The JSON must be strictly valid. Do not include comments or trailing commas.
-- The JSON must have four top-level keys: "correctiveEQ", "compressor", "tonalEQ", and "limiter".
-- **correctiveEQ**: An array of two objects.
-  - The first object's "frequency" property must be exactly **${analysis.muddyFreq}**.
-  - The second object's "frequency" property must be exactly **${analysis.harshFreq}**.
-  - Both objects must have "q" (Number) and "gain" (Number, should be negative) properties.
-- **compressor**: An object with "threshold", "ratio", "attack", "release", and "knee" properties (all Numbers). 
-  - The primary goal for compression is to apply gentle 'glue', with a maximum of 3dB of gain reduction.
-  - You **must** set the parameters so that the compressor applies **no more than 3dB of gain reduction**.
-  - Set a gentle "ratio", between 1.5 and 2.5. The track's peak level is ${analysis.peakDb.toFixed(1)} dBFS. You should set the "threshold" relative to this peak to achieve the target gain reduction.
-  - Base the "attack" and "release" on the Spectral Profile. For a "bass-heavy" profile, use a slower attack (30-50ms). For a "bright" or "mid-forward" profile, use a faster attack (10-25ms). Set the release to be 3-5 times the attack time.
-- **tonalEQ**: An array of three objects, each with "frequency", "q", "gain", and "type" properties.
-  - The first object should be a "lowshelf" with a "frequency" around 120.
-  - The second object should be a "peaking" EQ with a "frequency" between 2000 and 5000.
-  - The third object should be a "highshelf" with a "frequency" around 12000.
-  - Base the "gain" values on the Spectral Profile. If the profile is "bright", add less high-shelf gain and more low-shelf. If "bass-heavy", do the opposite.
-- **limiter**: An object with "threshold", "attack", "release", and "makeupGain" properties.
-  - The target RMS level before limiting is **-15.0 dBFS**. The track's initial RMS level is **${analysis.rmsDb.toFixed(1)} dBFS**.
-  - Calculate the required "makeupGain" to bring the RMS level to the target of -15.0 dBFS. The formula is: makeupGain = -15.0 - (${analysis.rmsDb.toFixed(1)}). The final perceived loudness will be higher than this RMS value due to the density added by the limiter.
-  - The "threshold" (also known as the ceiling) must be set to **-1.0** dB to prevent digital clipping.
-  - Set a fast "attack" (1-5ms) and a moderate "release" (e.g., 100-200ms).
-- "attack" and "release" values must be in milliseconds.
-`;
-                const apiUrl = 'https://ai-mastering-proxy.onrender.com/api/master';
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: prompt }) 
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`API Error: ${response.statusText} - ${JSON.stringify(errorData)}`);
-                }
-                
-                const result = await response.json();
-                let text = 'Error: Could not retrieve instructions.';
-                if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
-                    text = result.candidates[0].content.parts[0].text;
-                }
-                
-                masteringSettings = parseSettingsFromMarkdown(text);
-                
-                let html;
-                const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
-                if (masteringSettings && jsonMatch) {
-                    html = text.replace(jsonMatch[0], createSettingsSummaryHTML(masteringSettings));
-                } else {
-                    html = text.replace(/```json[\s\S]*?```/, '');
-                }
-
-                html = html
-                    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-                    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/^\s*-\s(.*$)/gim, '<ul><li>$1</li></ul>')
-                    .replace(/<\/ul>\s*<ul>/g, '')
-                    .replace(/(\r\n|\n){2,}/g, '<div class="h-6"></div>')
-                    .replace(/\n/g, '<br/>')
-                    .replace(/<br\/><(h[23]|ul|div)/g, '<$1')
-                    .replace(/<\/(h[23]|ul)><br\/>/g, '</$1>')
-                    .replace(/<\/li><br\/>/g, '</li>');
-                instructionsContainer.innerHTML = html;
-
-                if (masteringSettings) {
-                    playerControls.classList.remove('hidden');
-                }
-
-            } catch (error) {
-                console.error('Error during analysis or fetch:', error);
-                instructionsContainer.innerHTML = `<div class="text-red-400 text-center">
-                    <p><strong>Oops! Something went wrong.</strong></p>
-                    <p>${error.message}</p>
-                    <p>Please try again with a different file.</p>
-                    </div>`;
-            } finally {
-                loadingSpinner.classList.add('hidden');
-                loadingText.textContent = "Initializing...";
-                resetBtn.classList.remove('hidden');
-                donationSection.classList.remove('hidden');
-            }
-        });
+        function setupAllListeners() {
+            const setParam = (node, param, value) => { if(node && audioContext) node[param].setTargetAtTime(value, audioContext.currentTime, 0.01) };
+            const setupCeqBandListeners = (bandKey, bandUI) => {
+                const band = masteringSettings.correctiveEQ[bandKey];
+                bandUI.enable.addEventListener('change', e => { const isActive = e.target.checked; band.active = isActive; bandUI.controls.style.opacity = isActive ? '1' : '0.5'; bandUI.controls.style.pointerEvents = isActive ? 'auto' : 'none'; setParam(activeAudioNodes?.ceq?.[bandKey], 'gain', isActive ? band.gain : 0); });
+                const updateFreq = (val) => { band.frequency = val; bandUI.freqVal.textContent = `${val} Hz`; bandUI.freqSlider.value = val; setParam(activeAudioNodes?.ceq?.[bandKey], 'frequency', val); };
+                const updateGain = (val) => { band.gain = val; bandUI.gainVal.textContent = `${val.toFixed(1)} dB`; bandUI.gainSlider.value = val; if (band.active) setParam(activeAudioNodes?.ceq?.[bandKey], 'gain', val); };
+                const updateQ = (val) => { band.q = val; bandUI.qVal.textContent = val.toFixed(1); bandUI.qSlider.value = val; setParam(activeAudioNodes?.ceq?.[bandKey], 'Q', val); };
+                bandUI.freqSlider.addEventListener('input', e => updateFreq(parseFloat(e.target.value)));
+                bandUI.gainSlider.addEventListener('input', e => updateGain(parseFloat(e.target.value)));
+                bandUI.qSlider.addEventListener('input', e => updateQ(parseFloat(e.target.value)));
+                makeSpanEditable(bandUI.freqVal, bandUI.freqSlider, { min: parseFloat(bandUI.freqSlider.min), max: parseFloat(bandUI.freqSlider.max), step: parseFloat(bandUI.freqSlider.step), update: updateFreq });
+                makeSpanEditable(bandUI.gainVal, bandUI.gainSlider, { min: parseFloat(bandUI.gainSlider.min), max: parseFloat(bandUI.gainSlider.max), step: parseFloat(bandUI.gainSlider.step), update: updateGain });
+                makeSpanEditable(bandUI.qVal, bandUI.qSlider, { min: parseFloat(bandUI.qSlider.min), max: parseFloat(bandUI.qSlider.max), step: parseFloat(bandUI.qSlider.step), update: updateQ });
+            };
+            setupCeqBandListeners('band1', ui.ceq.b1);
+            setupCeqBandListeners('band2', ui.ceq.b2);
+            const updateCompThreshold = (val) => { masteringSettings.compressor.threshold = val; ui.comp.thresholdVal.textContent = `${val.toFixed(1)} dB`; ui.comp.thresholdSlider.value = val; setParam(activeAudioNodes?.compressor, 'threshold', val); };
+            const updateCompRatio = (val) => { masteringSettings.compressor.ratio = val; ui.comp.ratioVal.textContent = `${val.toFixed(1)} : 1`; ui.comp.ratioSlider.value = val; setParam(activeAudioNodes?.compressor, 'ratio', val); };
+            const updateCompAttack = (val) => { masteringSettings.compressor.attack = val; ui.comp.attackVal.textContent = `${val.toFixed(0)} ms`; ui.comp.attackSlider.value = val; setParam(activeAudioNodes?.compressor, 'attack', val / 1000); };
+            const updateCompRelease = (val) => { masteringSettings.compressor.release = val; ui.comp.releaseVal.textContent = `${val.toFixed(0)} ms`; ui.comp.releaseSlider.value = val; setParam(activeAudioNodes?.compressor, 'release', val / 1000); };
+            ui.comp.thresholdSlider.addEventListener('input', e => updateCompThreshold(parseFloat(e.target.value)));
+            ui.comp.ratioSlider.addEventListener('input', e => updateCompRatio(parseFloat(e.target.value)));
+            ui.comp.attackSlider.addEventListener('input', e => updateCompAttack(parseFloat(e.target.value)));
+            ui.comp.releaseSlider.addEventListener('input', e => updateCompRelease(parseFloat(e.target.value)));
+            makeSpanEditable(ui.comp.thresholdVal, ui.comp.thresholdSlider, { min: -40, max: 0, step: 0.1, update: updateCompThreshold });
+            makeSpanEditable(ui.comp.ratioVal, ui.comp.ratioSlider, { min: 1, max: 10, step: 0.1, update: updateCompRatio });
+            makeSpanEditable(ui.comp.attackVal, ui.comp.attackSlider, { min: 1, max: 100, step: 1, update: updateCompAttack });
+            makeSpanEditable(ui.comp.releaseVal, ui.comp.releaseSlider, { min: 10, max: 500, step: 1, update: updateCompRelease });
+            const updateTeqLowGain = (val) => { masteringSettings.tonalEQ.lowShelf.gain = val; ui.teq.lowGainVal.textContent = `${val.toFixed(1)} dB`; ui.teq.lowGainSlider.value = val; setParam(activeAudioNodes?.teq?.lowShelf, 'gain', val); };
+            const updateTeqMidGain = (val) => { masteringSettings.tonalEQ.midPeak.gain = val; ui.teq.midGainVal.textContent = `${val.toFixed(1)} dB`; ui.teq.midGainSlider.value = val; setParam(activeAudioNodes?.teq?.midPeak, 'gain', val); };
+            const updateTeqMidQ = (val) => { masteringSettings.tonalEQ.midPeak.q = val; ui.teq.midQVal.textContent = `${val.toFixed(1)}`; ui.teq.midQSlider.value = val; setParam(activeAudioNodes?.teq?.midPeak, 'Q', val); };
+            const updateTeqHighGain = (val) => { masteringSettings.tonalEQ.highShelf.gain = val; ui.teq.highGainVal.textContent = `${val.toFixed(1)} dB`; ui.teq.highGainSlider.value = val; setParam(activeAudioNodes?.teq?.highShelf, 'gain', val); };
+            ui.teq.lowGainSlider.addEventListener('input', e => updateTeqLowGain(parseFloat(e.target.value)));
+            ui.teq.midGainSlider.addEventListener('input', e => updateTeqMidGain(parseFloat(e.target.value)));
+            ui.teq.midQSlider.addEventListener('input', e => updateTeqMidQ(parseFloat(e.target.value)));
+            ui.teq.highGainSlider.addEventListener('input', e => updateTeqHighGain(parseFloat(e.target.value)));
+            makeSpanEditable(ui.teq.lowGainVal, ui.teq.lowGainSlider, { min: -6, max: 6, step: 0.1, update: updateTeqLowGain });
+            makeSpanEditable(ui.teq.midGainVal, ui.teq.midGainSlider, { min: -6, max: 6, step: 0.1, update: updateTeqMidGain });
+            makeSpanEditable(ui.teq.midQVal, ui.teq.midQSlider, { min: 0.5, max: 5, step: 0.1, update: updateTeqMidQ });
+            makeSpanEditable(ui.teq.highGainVal, ui.teq.highGainSlider, { min: -6, max: 6, step: 0.1, update: updateTeqHighGain });
+            const updateLimiterGain = (val) => { masteringSettings.limiter.makeupGain = val; ui.limiter.gainVal.textContent = `+${val.toFixed(1)} dB`; ui.limiter.gainSlider.value = val; setParam(activeAudioNodes?.limiterGain, 'gain', Math.pow(10, val / 20)); };
+            ui.limiter.gainSlider.addEventListener('input', e => updateLimiterGain(parseFloat(e.target.value)));
+            makeSpanEditable(ui.limiter.gainVal, ui.limiter.gainSlider, { min: 0, max: 12, step: 0.1, update: updateLimiterGain });
+        }
         
-        resetBtn.addEventListener('click', () => {
-            if (currentSource) { try { currentSource.stop(); } catch(e) {} }
-            if (audioContext && audioContext.state !== 'closed') {
-                audioContext.close();
-            }
-            uploadSection.classList.remove('hidden');
-            resultSection.classList.add('hidden');
-            playerControls.classList.add('hidden');
-            instructionsContainer.innerHTML = '';
-            fileInfo.classList.add('hidden');
-            fileNameEl.textContent = '';
-            getInstructionsBtn.disabled = true;
-            audioUpload.value = '';
-            uploadedFile = null;
-            audioBuffer = null;
-            masteringSettings = null;
-            isPlaying = false;
-            lastPlayedType = null;
-            updatePlayButtonStates();
-        });
+        function startMeters() { if (isMetering || !isPlaying || !activeAudioNodes) return; isMetering = true; const maxReduction = 24; function meterLoop() { if (!isMetering) { ui.comp.grMeter.style.width = '0%'; ui.limiter.grMeter.style.width = '0%'; ui.comp.grVal.textContent = '-0.0 dB'; ui.limiter.grVal.textContent = '-0.0 dB'; return; } const compRed = activeAudioNodes.compressor ? activeAudioNodes.compressor.reduction : 0; const limRed = activeAudioNodes.limiter ? activeAudioNodes.limiter.reduction : 0; ui.comp.grMeter.style.width = `${(Math.abs(compRed) / maxReduction) * 100}%`; ui.limiter.grMeter.style.width = `${(Math.abs(limRed) / maxReduction) * 100}%`; ui.comp.grVal.textContent = `${compRed.toFixed(1)} dB`; ui.limiter.grVal.textContent = `${limRed.toFixed(1)} dB`; requestAnimationFrame(meterLoop); } meterLoop(); }
+        
+        // --- AUDIO PROCESSING CHAIN ---
+        function applyMasteringChain(context, sourceNode, settings) { let lastNode = sourceNode; const nodes = { ceq: {}, teq: {} }; const now = context.currentTime; const ceqB1 = context.createBiquadFilter(); ceqB1.type = 'peaking'; ceqB1.frequency.setValueAtTime(settings.correctiveEQ.band1.frequency, now); ceqB1.Q.setValueAtTime(settings.correctiveEQ.band1.q, now); ceqB1.gain.setValueAtTime(settings.correctiveEQ.band1.active ? settings.correctiveEQ.band1.gain : 0, now); lastNode.connect(ceqB1); lastNode = ceqB1; nodes.ceq.band1 = ceqB1; const ceqB2 = context.createBiquadFilter(); ceqB2.type = 'peaking'; ceqB2.frequency.setValueAtTime(settings.correctiveEQ.band2.frequency, now); ceqB2.Q.setValueAtTime(settings.correctiveEQ.band2.q, now); ceqB2.gain.setValueAtTime(settings.correctiveEQ.band2.active ? settings.correctiveEQ.band2.gain : 0, now); lastNode.connect(ceqB2); lastNode = ceqB2; nodes.ceq.band2 = ceqB2; const comp = settings.compressor; const compressor = context.createDynamicsCompressor(); compressor.threshold.setValueAtTime(comp.threshold, now); compressor.ratio.setValueAtTime(comp.ratio, now); compressor.attack.setValueAtTime(comp.attack / 1000, now); compressor.release.setValueAtTime(comp.release / 1000, now); compressor.knee.setValueAtTime(5, now); lastNode.connect(compressor); lastNode = compressor; nodes.compressor = compressor; const teq = settings.tonalEQ; if (teq.highPass.active) { const hpf = context.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.setValueAtTime(teq.highPass.frequency, now); lastNode.connect(hpf); lastNode = hpf; nodes.teq.highPass = hpf; } const lowShelf = context.createBiquadFilter(); lowShelf.type = 'lowshelf'; lowShelf.frequency.setValueAtTime(teq.lowShelf.frequency, now); lowShelf.gain.setValueAtTime(teq.lowShelf.gain, now); lastNode.connect(lowShelf); lastNode = lowShelf; nodes.teq.lowShelf = lowShelf; const midPeak = context.createBiquadFilter(); midPeak.type = 'peaking'; midPeak.frequency.setValueAtTime(teq.midPeak.frequency, now); midPeak.gain.setValueAtTime(teq.midPeak.gain, now); midPeak.Q.setValueAtTime(teq.midPeak.q, now); lastNode.connect(midPeak); lastNode = midPeak; nodes.teq.midPeak = midPeak; const highShelf = context.createBiquadFilter(); highShelf.type = 'highshelf'; highShelf.frequency.setValueAtTime(teq.highShelf.frequency, now); highShelf.gain.setValueAtTime(teq.highShelf.gain, now); lastNode.connect(highShelf); lastNode = highShelf; nodes.teq.highShelf = highShelf; const lim = settings.limiter; const makeupGainNode = context.createGain(); makeupGainNode.gain.setValueAtTime(Math.pow(10, lim.makeupGain / 20), now); lastNode.connect(makeupGainNode); lastNode = makeupGainNode; nodes.limiterGain = makeupGainNode; const limiterNode = context.createDynamicsCompressor(); limiterNode.threshold.setValueAtTime(lim.threshold, now); limiterNode.knee.setValueAtTime(0, now); limiterNode.ratio.setValueAtTime(20, now); limiterNode.attack.setValueAtTime(0.001, now); limiterNode.release.setValueAtTime(0.080, now); lastNode.connect(limiterNode); lastNode = limiterNode; nodes.limiter = limiterNode; return { finalNode: lastNode, nodes }; }
+
+        // --- Playback and Export ---
+        function updatePlayButtonStates() { if (isPlaying) { if (lastPlayedType === 'original') { ui.previewOriginalBtn.textContent = 'Pause'; ui.previewMasteredBtn.textContent = 'Preview Mastered'; } else { ui.previewMasteredBtn.textContent = 'Pause'; ui.previewOriginalBtn.textContent = 'Preview Original'; } } else { ui.previewOriginalBtn.textContent = 'Preview Original'; ui.previewMasteredBtn.textContent = 'Preview Mastered'; } }
+        function stopPlayback(isPausing = false) { if(currentSource) try { currentSource.stop(0); } catch(e){} cancelAnimationFrame(animationFrameId); if (!isPausing) { startOffset = 0; ui.playhead.style.left = '0%'; ui.currentTime.textContent = formatTime(0); } isPlaying = false; isMetering = false; updatePlayButtonStates(); }
+        function play(offset = 0, type) { if (audioContext && audioContext.state !== 'closed') { audioContext.close(); } audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: audioBuffer.sampleRate }); if (audioContext.state === 'suspended') audioContext.resume(); const source = audioContext.createBufferSource(); source.buffer = audioBuffer; currentSource = source; let lastNode = source; activeAudioNodes = null; lastPlayedType = type; if (type === 'mastered' && masteringSettings) { try { const chain = applyMasteringChain(audioContext, source, masteringSettings); lastNode = chain.finalNode; activeAudioNodes = chain.nodes; } catch (e) { console.error("Error applying mastering chain:", e); lastNode = source; } } lastNode.connect(audioContext.destination); source.start(0, offset); isPlaying = true; startOffset = offset; playbackStartTime = audioContext.currentTime; updatePlayButtonStates(); if (type === 'mastered') startMeters(); updatePlayhead(); }
+        function togglePlayback(type) { if (!audioBuffer) return; if (isPlaying && lastPlayedType !== type) { stopPlayback(true); play(startOffset, type); return; } if (isPlaying) { if(audioContext) { const elapsed = audioContext.currentTime - playbackStartTime; startOffset += elapsed; audioContext.suspend(); } isPlaying = false; isMetering = false; cancelAnimationFrame(animationFrameId); } else { if (audioContext && audioContext.state === 'suspended' && lastPlayedType === type) { audioContext.resume(); playbackStartTime = audioContext.currentTime; } else { play(startOffset, type); } isPlaying = true; if(type === 'mastered') startMeters(); updatePlayhead(); } updatePlayButtonStates(); }
+        function drawWaveform(buffer) { const canvas = ui.waveformCanvas; const ctx = canvas.getContext('2d'); const width = ui.waveformContainer.clientWidth; const height = ui.waveformContainer.clientHeight; canvas.width = width; canvas.height = height; const data = buffer.getChannelData(0); const step = Math.ceil(data.length / width); const amp = height / 2; ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(160, 174, 192, 0.7)'; ctx.clearRect(0, 0, width, height); ctx.beginPath(); for (let i = 0; i < width; i++) { let min = 1.0, max = -1.0; for (let j = 0; j < step; j++) { const datum = data[(i * step) + j]; if (datum < min) min = datum; if (datum > max) max = datum; } ctx.moveTo(i, (1 + min) * amp); ctx.lineTo(i, (1 + max) * amp); } ctx.stroke(); }
+        function formatTime(seconds) { const minutes = Math.floor(seconds / 60); const remainingSeconds = Math.floor(seconds % 60); return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`; }
+        function updatePlayhead() { if (!isPlaying || !audioContext) { cancelAnimationFrame(animationFrameId); return; } const elapsed = audioContext.currentTime - playbackStartTime; const currentPlaybackTime = startOffset + elapsed; const progress = (currentPlaybackTime / audioBuffer.duration); if (progress >= 1) { ui.playhead.style.left = '100%'; ui.currentTime.textContent = formatTime(audioBuffer.duration); stopPlayback(); } else { ui.playhead.style.left = `${progress * 100}%`; ui.currentTime.textContent = formatTime(currentPlaybackTime); animationFrameId = requestAnimationFrame(updatePlayhead); } }
+        async function exportMasteredFile() { if (!audioBuffer || !masteringSettings) return; ui.downloadMasteredBtn.disabled = true; ui.downloadMasteredBtn.textContent = 'Exporting...'; try { const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate); const source = offlineCtx.createBufferSource(); source.buffer = audioBuffer; const { finalNode } = applyMasteringChain(offlineCtx, source, masteringSettings); finalNode.connect(offlineCtx.destination); source.start(0); const renderedBuffer = await offlineCtx.startRendering(); const wavBlob = bufferToWave(renderedBuffer, 24); const url = URL.createObjectURL(wavBlob); const a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = 'mastered-track-24bit.wav'; document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); a.remove(); } catch (e) { console.error("Export failed:", e); alert("Sorry, the export failed."); } finally { ui.downloadMasteredBtn.disabled = false; ui.downloadMasteredBtn.textContent = 'Download Mastered'; } }
+        function bufferToWave(audioBuffer, bitDepth = 24) { const numChannels = audioBuffer.numberOfChannels, sampleRate = audioBuffer.sampleRate, numFrames = audioBuffer.length, bytesPerSample = bitDepth / 8; const headerSize = 44, dataSize = numFrames * numChannels * bytesPerSample, fileSize = headerSize + dataSize; const buffer = new ArrayBuffer(fileSize), view = new DataView(buffer); let pos = 0; view.setUint8(pos++, 82); view.setUint8(pos++, 73); view.setUint8(pos++, 70); view.setUint8(pos++, 70); view.setUint32(pos, fileSize - 8, true); pos += 4; view.setUint8(pos++, 87); view.setUint8(pos++, 65); view.setUint8(pos++, 86); view.setUint8(pos++, 69); view.setUint8(pos++, 102); view.setUint8(pos++, 109); view.setUint8(pos++, 116); view.setUint8(pos++, 32); view.setUint32(pos, 16, true); pos += 4; view.setUint16(pos, 1, true); pos += 2; view.setUint16(pos, numChannels, true); pos += 2; view.setUint32(pos, sampleRate, true); pos += 4; view.setUint32(pos, sampleRate * numChannels * bytesPerSample, true); pos += 4; view.setUint16(pos, numChannels * bytesPerSample, true); pos += 2; view.setUint16(pos, bitDepth, true); pos += 2; view.setUint8(pos++, 100); view.setUint8(pos++, 97); view.setUint8(pos++, 116); view.setUint8(pos++, 97); view.setUint32(pos, dataSize, true); pos += 4; const channels = []; for (let i = 0; i < numChannels; i++) channels.push(audioBuffer.getChannelData(i)); const maxInt = 8388607; for (let i = 0; i < numFrames; i++) { for (let j = 0; j < numChannels; j++) { const floatSample = channels[j][i], clampedSample = Math.max(-1, Math.min(1, floatSample)); let intSample = Math.round(clampedSample * maxInt); view.setUint8(pos++, intSample & 255); view.setUint8(pos++, (intSample >> 8) & 255); view.setUint8(pos++, (intSample >> 16) & 255); } } return new Blob([view], { type: 'audio/wav' }); }
+        
+        // --- Event Listeners & Main Logic ---
+        ui.audioUpload.addEventListener('change', (event) => { const files = event.target.files; if (files.length > 0) { uploadedFile = files[0]; ui.fileNameEl.textContent = uploadedFile.name; ui.fileInfo.classList.remove('hidden'); ui.getInstructionsBtn.disabled = false; } });
+        ui.getInstructionsBtn.addEventListener('click', async () => { if (!uploadedFile) return; ui.uploadSection.classList.add('hidden'); ui.resultSection.classList.remove('hidden'); ui.loadingSpinner.classList.remove('hidden'); ui.controlsWrapper.classList.add('hidden'); ui.resetBtn.classList.add('hidden'); ui.donationSection.classList.add('hidden'); try { ui.loadingText.textContent = 'Performing deep audio analysis...'; const analysis = await analyzeAudio(uploadedFile); ui.loadingText.textContent = 'Generating custom mastering chain...'; await new Promise(resolve => setTimeout(resolve, 500)); masteringSettings = generateMasteringSettings(analysis); if (masteringSettings) { populateUI(masteringSettings); setupAllListeners(); requestAnimationFrame(() => drawWaveform(audioBuffer)); ui.totalTime.textContent = formatTime(audioBuffer.duration); ui.controlsWrapper.classList.remove('hidden'); } else throw new Error("Could not generate mastering settings."); } catch (error) { console.error('Error during analysis or processing:', error); ui.loadingSpinner.innerHTML = `<div class="text-red-400 text-center"><p><strong>Oops! Something went wrong.</strong></p><p>${error.message}</p><p>Please try again with a different file.</p></div>`; } finally { ui.loadingSpinner.classList.add('hidden'); ui.loadingText.textContent = "Initializing..."; ui.resetBtn.classList.remove('hidden'); ui.donationSection.classList.remove('hidden'); } });
+        ui.resetBtn.addEventListener('click', () => { stopPlayback(); if (audioContext && audioContext.state !== 'closed') audioContext.close(); ui.uploadSection.classList.remove('hidden'); ui.resultSection.classList.add('hidden'); ui.fileInfo.classList.add('hidden'); ui.fileNameEl.textContent = ''; ui.getInstructionsBtn.disabled = true; ui.audioUpload.value = ''; const canvas = ui.waveformCanvas; const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); ui.playhead.style.left = '0%'; ui.currentTime.textContent = '0:00'; ui.totalTime.textContent = '0:00'; uploadedFile = null; audioBuffer = null; masteringSettings = null; isPlaying = false; lastPlayedType = null; isMetering = false; activeAudioNodes = null; startOffset = 0; updatePlayButtonStates(); });
+        ui.waveformContainer.addEventListener('click', (e) => { if (!audioBuffer) return; const rect = ui.waveformContainer.getBoundingClientRect(); const x = e.clientX - rect.left; const progress = x / rect.width; const seekTime = progress * audioBuffer.duration; startOffset = seekTime; ui.currentTime.textContent = formatTime(seekTime); if(isPlaying) { stopPlayback(true); play(seekTime, lastPlayedType); } else { ui.playhead.style.left = `${progress * 100}%`; } });
+        ui.previewOriginalBtn.addEventListener('click', () => togglePlayback('original'));
+        ui.previewMasteredBtn.addEventListener('click', () => togglePlayback('mastered'));
+        ui.downloadMasteredBtn.addEventListener('click', exportMasteredFile);
     </script>
 </body>
 </html>
