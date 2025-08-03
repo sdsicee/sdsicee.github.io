@@ -214,7 +214,6 @@
                                 for (let i = startIndex; i <= endIndex; i++) sum += avgFreqData[i];
                                 return sum / (endIndex - startIndex + 1);
                             };
-                            const spectralBands = { subBass: getAvgEnergy(20, 60), midBass: getAvgEnergy(60, 200), lowMids: getAvgEnergy(200, 500), midRange: getAvgEnergy(500, 3000), presence: getAvgEnergy(3000, 6000), air: getAvgEnergy(10000, 20000) };
                             const findPeakInRange = (startFreq, endFreq) => {
                                 let maxVal = -1, peakFreq = -1;
                                 const startIndex = Math.round(startFreq / buffer.sampleRate * analyser.fftSize), endIndex = Math.round(endFreq / buffer.sampleRate * analyser.fftSize);
@@ -226,7 +225,23 @@
                                 }
                                 return peakFreq;
                             };
-                            resolve({ peakDb, loudnessRange, spectralBands, muddyFreq: findPeakInRange(200, 500), harshFreq: findPeakInRange(3000, 6000), tonalMidFreq: findPeakInRange(2000, 5000) });
+                            const analysisResults = {
+                                peakDb, loudnessRange,
+                                corrective: {
+                                    lowMidEnergy: getAvgEnergy(200, 500),
+                                    presenceEnergy: getAvgEnergy(3000, 6000),
+                                    muddyFreq: findPeakInRange(200, 500),
+                                    harshFreq: findPeakInRange(3000, 6000)
+                                },
+                                tonal: {
+                                    subBassEnergy: getAvgEnergy(20, 60),
+                                    lowShelfEnergy: getAvgEnergy(60, 200),
+                                    midRangeEnergy: getAvgEnergy(500, 2000),
+                                    highShelfEnergy: getAvgEnergy(10000, 20000),
+                                    midPeakFreq: findPeakInRange(2000, 5000)
+                                }
+                            };
+                            resolve(analysisResults);
                         }).catch(reject);
                     } catch (error) { reject(new Error("Could not decode audio file. It may be corrupt or an unsupported format.")); }
                 };
@@ -237,18 +252,57 @@
 
         // --- SETTINGS GENERATOR ---
         const generateMasteringSettings = (analysis) => {
+            const { corrective, tonal, peakDb, loudnessRange } = analysis;
+            const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+
+            // Corrective EQ Settings
             const correctiveEQ = {
-                band1: { active: analysis.spectralBands.lowMids > 110 && analysis.muddyFreq > 0, frequency: analysis.muddyFreq || 350, gain: -2.0, q: 3.5 },
-                band2: { active: analysis.spectralBands.presence > 100 && analysis.harshFreq > 0, frequency: analysis.harshFreq || 4500, gain: -1.5, q: 4.0 }
+                band1: { active: corrective.lowMidEnergy > 110 && corrective.muddyFreq > 0, frequency: corrective.muddyFreq || 350, gain: -2.0, q: 3.5 },
+                band2: { active: corrective.presenceEnergy > 100 && corrective.harshFreq > 0, frequency: corrective.harshFreq || 4500, gain: -1.5, q: 4.0 }
             };
-            const compressor = { threshold: -18.0, ratio: analysis.loudnessRange > 10 ? 2.0 : 1.5, attack: analysis.peakDb > -3 ? 50 : 25, release: (analysis.peakDb > -3 ? 50 : 25) * 4 };
+
+            // Compressor Settings
+            const compressor = { 
+                threshold: -18.0, 
+                ratio: loudnessRange > 10 ? 2.0 : 1.5, 
+                attack: peakDb > -3 ? 50 : 25, 
+                release: (peakDb > -3 ? 50 : 25) * 4 
+            };
+
+            // --- REFINED Tonal EQ Logic ---
+            const midEnergy = tonal.midRangeEnergy > 0 ? tonal.midRangeEnergy : 1;
+            
+            const idealLowToMidRatio = 1.25;
+            const idealHighToMidRatio = 0.6;
+            
+            const actualLowToMidRatio = tonal.lowShelfEnergy / midEnergy;
+            const actualHighToMidRatio = tonal.highShelfEnergy / midEnergy;
+
+            // Calculate gain with more subtle scaling factors
+            const lowGain = (idealLowToMidRatio - actualLowToMidRatio) * 1.5; // Reduced from 2.5
+            const highGain = (idealHighToMidRatio - actualHighToMidRatio) * 2.0; // Reduced from 3.5
+
             const tonalEQ = {
-                highPass: { active: analysis.spectralBands.subBass > 95, frequency: 30 },
-                lowShelf: { frequency: 120, gain: analysis.spectralBands.midBass < 85 ? 1.0 : -0.5 },
-                midPeak: { frequency: analysis.tonalMidFreq > 0 ? analysis.tonalMidFreq : 3500, gain: analysis.spectralBands.midRange < 75 ? 0.5 : 0, q: 1.5 },
-                highShelf: { frequency: 12000, gain: analysis.spectralBands.air < 35 ? 1.5 : -0.5 }
+                highPass: { active: tonal.subBassEnergy > 95, frequency: 30 },
+                lowShelf: { 
+                    frequency: 120, 
+                    gain: clamp(lowGain, -2.0, 2.0) // Clamped to a more gentle +/- 2.0dB
+                },
+                midPeak: { 
+                    frequency: tonal.midPeakFreq > 0 ? tonal.midPeakFreq : 3500, 
+                    gain: tonal.midRangeEnergy < 75 ? clamp(((75 - tonal.midRangeEnergy) / 25), 0, 1.5) : 0, // Slightly less sensitive boost
+                    q: 1.5 
+                },
+                highShelf: { 
+                    frequency: 12000, 
+                    gain: clamp(highGain, -2.0, 2.0) // Clamped to a more gentle +/- 2.0dB
+                }
             };
-            const limiter = { threshold: -1.0, makeupGain: analysis.loudnessRange > 12 ? 5.0 : (analysis.loudnessRange > 8 ? 3.5 : 2.0) };
+            // --- End of Refined Logic ---
+
+            // Limiter Settings
+            const limiter = { threshold: -1.0, makeupGain: loudnessRange > 12 ? 5.0 : (loudnessRange > 8 ? 3.5 : 2.0) };
+            
             return { correctiveEQ, compressor, tonalEQ, limiter };
         };
 
