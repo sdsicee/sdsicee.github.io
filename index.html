@@ -123,7 +123,7 @@
                             <h5 class="font-bold text-indigo-400">Tonal EQ</h5>
                             <div id="tonal-eq-controls" class="space-y-3">
                                 <div class="space-y-2"><h6 class="text-xs font-bold uppercase text-gray-400">Low Shelf (@ 120Hz)</h6><div class="flex justify-between items-center text-sm"><label>Gain</label><span id="teq-low-gain-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">0.0 dB</span></div><input type="range" id="teq-low-gain" min="-6" max="6" step="0.1" class="w-full"></div>
-                                <div class="space-y-2"><h6 class="text-xs font-bold uppercase text-gray-400">Mid Peak (@ 1.8kHz)</h6><div class="flex justify-between items-center text-sm"><label>Gain</label><span id="teq-mid-gain-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">0.0 dB</span></div><input type="range" id="teq-mid-gain" min="-6" max="6" step="0.1" class="w-full"><div class="flex justify-between items-center text-sm"><label>Q</label><span id="teq-mid-q-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">1.5</span></div><input type="range" id="teq-mid-q" min="0.5" max="5" step="0.1" class="w-full"></div>
+                                <div class="space-y-2"><h6 class="text-xs font-bold uppercase text-gray-400">Mid Peak</h6><div class="flex justify-between items-center text-sm"><label>Frequency</label><span id="teq-mid-freq-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">3500 Hz</span></div><input type="range" id="teq-mid-freq" min="2000" max="5000" step="50" class="w-full"><div class="flex justify-between items-center text-sm"><label>Gain</label><span id="teq-mid-gain-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">0.0 dB</span></div><input type="range" id="teq-mid-gain" min="-6" max="6" step="0.1" class="w-full"><div class="flex justify-between items-center text-sm"><label>Q</label><span id="teq-mid-q-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">1.5</span></div><input type="range" id="teq-mid-q" min="0.5" max="5" step="0.1" class="w-full"></div>
                                 <div class="space-y-2"><h6 class="text-xs font-bold uppercase text-gray-400">High Shelf (@ 12kHz)</h6><div class="flex justify-between items-center text-sm"><label>Gain</label><span id="teq-high-gain-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">0.0 dB</span></div><input type="range" id="teq-high-gain" min="-6" max="6" step="0.1" class="w-full"></div>
                             </div>
                             <div id="hpf-display" class="text-xs text-center text-gray-500 pt-2"></div>
@@ -152,7 +152,7 @@
                 b2: { enable: document.getElementById('ceq-b2-enable'), controls: document.getElementById('ceq-b2-controls'), freqSlider: document.getElementById('ceq-b2-freq'), freqVal: document.getElementById('ceq-b2-freq-val'), gainSlider: document.getElementById('ceq-b2-gain'), gainVal: document.getElementById('ceq-b2-gain-val'), qSlider: document.getElementById('ceq-b2-q'), qVal: document.getElementById('ceq-b2-q-val') }
             },
             comp: { thresholdSlider: document.getElementById('comp-threshold'), thresholdVal: document.getElementById('comp-threshold-val'), ratioSlider: document.getElementById('comp-ratio'), ratioVal: document.getElementById('comp-ratio-val'), attackSlider: document.getElementById('comp-attack'), attackVal: document.getElementById('comp-attack-val'), releaseSlider: document.getElementById('comp-release'), releaseVal: document.getElementById('comp-release-val'), grMeter: document.getElementById('comp-gr-meter'), grVal: document.getElementById('comp-gr-val') },
-            teq: { lowGainSlider: document.getElementById('teq-low-gain'), lowGainVal: document.getElementById('teq-low-gain-val'), midGainSlider: document.getElementById('teq-mid-gain'), midGainVal: document.getElementById('teq-mid-gain-val'), midQSlider: document.getElementById('teq-mid-q'), midQVal: document.getElementById('teq-mid-q-val'), highGainSlider: document.getElementById('teq-high-gain'), highGainVal: document.getElementById('teq-high-gain-val'), hpfDisplay: document.getElementById('hpf-display') },
+            teq: { lowGainSlider: document.getElementById('teq-low-gain'), lowGainVal: document.getElementById('teq-low-gain-val'), midFreqSlider: document.getElementById('teq-mid-freq'), midFreqVal: document.getElementById('teq-mid-freq-val'), midGainSlider: document.getElementById('teq-mid-gain'), midGainVal: document.getElementById('teq-mid-gain-val'), midQSlider: document.getElementById('teq-mid-q'), midQVal: document.getElementById('teq-mid-q-val'), highGainSlider: document.getElementById('teq-high-gain'), highGainVal: document.getElementById('teq-high-gain-val'), hpfDisplay: document.getElementById('hpf-display') },
             limiter: { gainSlider: document.getElementById('limiter-gain'), gainVal: document.getElementById('limiter-gain-val'), grMeter: document.getElementById('limiter-gr-meter'), grVal: document.getElementById('limiter-gr-val') }
         };
 
@@ -226,7 +226,7 @@
                                 }
                                 return peakFreq;
                             };
-                            resolve({ peakDb, loudnessRange, spectralBands, muddyFreq: findPeakInRange(200, 500), harshFreq: findPeakInRange(3000, 6000) });
+                            resolve({ peakDb, loudnessRange, spectralBands, muddyFreq: findPeakInRange(200, 500), harshFreq: findPeakInRange(3000, 6000), tonalMidFreq: findPeakInRange(2000, 5000) });
                         }).catch(reject);
                     } catch (error) { reject(new Error("Could not decode audio file. It may be corrupt or an unsupported format.")); }
                 };
@@ -245,7 +245,7 @@
             const tonalEQ = {
                 highPass: { active: analysis.spectralBands.subBass > 95, frequency: 30 },
                 lowShelf: { frequency: 120, gain: analysis.spectralBands.midBass < 85 ? 1.0 : -0.5 },
-                midPeak: { frequency: 1800, gain: analysis.spectralBands.midRange < 75 ? 1.0 : 0, q: 1.5 },
+                midPeak: { frequency: analysis.tonalMidFreq > 0 ? analysis.tonalMidFreq : 3500, gain: analysis.spectralBands.midRange < 75 ? 0.5 : 0, q: 1.5 },
                 highShelf: { frequency: 12000, gain: analysis.spectralBands.air < 35 ? 1.5 : -0.5 }
             };
             const limiter = { threshold: -1.0, makeupGain: analysis.loudnessRange > 12 ? 5.0 : (analysis.loudnessRange > 8 ? 3.5 : 2.0) };
@@ -280,6 +280,8 @@
             teq.hpfDisplay.textContent = tonalEQ.highPass.active ? `High-Pass Filter @ ${tonalEQ.highPass.frequency}Hz` : '';
             teq.lowGainSlider.value = tonalEQ.lowShelf.gain;
             teq.lowGainVal.textContent = `${tonalEQ.lowShelf.gain.toFixed(1)} dB`;
+            teq.midFreqSlider.value = tonalEQ.midPeak.frequency;
+            teq.midFreqVal.textContent = `${tonalEQ.midPeak.frequency} Hz`;
             teq.midGainSlider.value = tonalEQ.midPeak.gain;
             teq.midGainVal.textContent = `${tonalEQ.midPeak.gain.toFixed(1)} dB`;
             teq.midQSlider.value = tonalEQ.midPeak.q;
@@ -365,14 +367,17 @@
             makeSpanEditable(ui.comp.attackVal, ui.comp.attackSlider, { min: 1, max: 100, step: 1, update: updateCompAttack });
             makeSpanEditable(ui.comp.releaseVal, ui.comp.releaseSlider, { min: 10, max: 500, step: 1, update: updateCompRelease });
             const updateTeqLowGain = (val) => { masteringSettings.tonalEQ.lowShelf.gain = val; ui.teq.lowGainVal.textContent = `${val.toFixed(1)} dB`; ui.teq.lowGainSlider.value = val; setParam(activeAudioNodes?.teq?.lowShelf, 'gain', val); };
+            const updateTeqMidFreq = (val) => { masteringSettings.tonalEQ.midPeak.frequency = val; ui.teq.midFreqVal.textContent = `${val} Hz`; ui.teq.midFreqSlider.value = val; setParam(activeAudioNodes?.teq?.midPeak, 'frequency', val); };
             const updateTeqMidGain = (val) => { masteringSettings.tonalEQ.midPeak.gain = val; ui.teq.midGainVal.textContent = `${val.toFixed(1)} dB`; ui.teq.midGainSlider.value = val; setParam(activeAudioNodes?.teq?.midPeak, 'gain', val); };
             const updateTeqMidQ = (val) => { masteringSettings.tonalEQ.midPeak.q = val; ui.teq.midQVal.textContent = `${val.toFixed(1)}`; ui.teq.midQSlider.value = val; setParam(activeAudioNodes?.teq?.midPeak, 'Q', val); };
             const updateTeqHighGain = (val) => { masteringSettings.tonalEQ.highShelf.gain = val; ui.teq.highGainVal.textContent = `${val.toFixed(1)} dB`; ui.teq.highGainSlider.value = val; setParam(activeAudioNodes?.teq?.highShelf, 'gain', val); };
             ui.teq.lowGainSlider.addEventListener('input', e => updateTeqLowGain(parseFloat(e.target.value)));
+            ui.teq.midFreqSlider.addEventListener('input', e => updateTeqMidFreq(parseFloat(e.target.value)));
             ui.teq.midGainSlider.addEventListener('input', e => updateTeqMidGain(parseFloat(e.target.value)));
             ui.teq.midQSlider.addEventListener('input', e => updateTeqMidQ(parseFloat(e.target.value)));
             ui.teq.highGainSlider.addEventListener('input', e => updateTeqHighGain(parseFloat(e.target.value)));
             makeSpanEditable(ui.teq.lowGainVal, ui.teq.lowGainSlider, { min: -6, max: 6, step: 0.1, update: updateTeqLowGain });
+            makeSpanEditable(ui.teq.midFreqVal, ui.teq.midFreqSlider, { min: 2000, max: 5000, step: 50, update: updateTeqMidFreq });
             makeSpanEditable(ui.teq.midGainVal, ui.teq.midGainSlider, { min: -6, max: 6, step: 0.1, update: updateTeqMidGain });
             makeSpanEditable(ui.teq.midQVal, ui.teq.midQSlider, { min: 0.5, max: 5, step: 0.1, update: updateTeqMidQ });
             makeSpanEditable(ui.teq.highGainVal, ui.teq.highGainSlider, { min: -6, max: 6, step: 0.1, update: updateTeqHighGain });
