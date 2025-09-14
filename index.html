@@ -66,7 +66,7 @@
             <div id="upload-section">
                 <div class="flex items-center justify-center w-full">
                      <label for="audio-upload" class="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-500 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700/80 transition-colors">
-                        <div class="flex flex-col items-center justify-center pt-5 pb-6"><svg class="w-10 h-10 mb-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg><p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Click to upload</span> or drag and drop</p><p class="text-xs text-gray-500">WAV, MP3, or FLAC</p></div>
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6"><svg class="w-10 h-10 mb-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg><p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Click to upload</span></p><p class="text-xs text-gray-500">WAV, MP3, or FLAC</p></div>
                         <input id="audio-upload" type="file" class="hidden" accept="audio/wav, audio/mpeg, audio/flac, .wav, .mp3, .flac">
                     </label>
                 </div>
@@ -90,6 +90,7 @@
                     
                     <!-- Effects Chain UI -->
                     <div id="effects-chain-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                        <!-- Corrective EQ -->
                         <div class="bg-gray-800/50 p-4 rounded-lg space-y-3">
                             <h5 class="font-bold text-indigo-400">Corrective EQ</h5>
                             <div class="space-y-2 pt-1">
@@ -109,7 +110,9 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Compressor -->
                         <div class="bg-gray-800/50 p-4 rounded-lg space-y-3">
+                            <p class="text-xs text-center text-gray-400 italic -mt-1 mb-2">Tip: Shoot for no more than 2 dB of gain reduction.</p>
                             <h5 class="font-bold text-indigo-400">Compressor</h5>
                             <div class="space-y-2">
                                 <div class="flex justify-between items-center text-sm"><label>Threshold</label><span id="comp-threshold-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">-18.0 dB</span></div><input type="range" id="comp-threshold" min="-40" max="0" step="0.5" class="w-full">
@@ -119,7 +122,9 @@
                             </div>
                             <div class="pt-2"><div class="text-sm mb-1 text-gray-400">Gain Reduction</div><div class="flex items-center gap-2"><div class="meter-track flex-grow"><div id="comp-gr-meter" class="meter-bar"></div></div><span id="comp-gr-val" class="w-16 text-right font-mono text-sm text-amber-400">-0.0 dB</span></div></div>
                         </div>
+                        <!-- Tonal EQ -->
                         <div class="bg-gray-800/50 p-4 rounded-lg space-y-3">
+                            <p class="text-xs text-center text-gray-400 italic -mt-1 mb-2">Tip: Add no more than 1dB of Gain (above the Mastering Engine suggestion) to the Low Shelf for added low end weight.</p>
                             <h5 class="font-bold text-indigo-400">Tonal EQ</h5>
                             <div id="tonal-eq-controls" class="space-y-3">
                                 <div class="space-y-2"><h6 class="text-xs font-bold uppercase text-gray-400">Low Shelf (@ 120Hz)</h6><div class="flex justify-between items-center text-sm"><label>Gain</label><span id="teq-low-gain-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">0.0 dB</span></div><input type="range" id="teq-low-gain" min="-6" max="6" step="0.1" class="w-full"></div>
@@ -128,7 +133,9 @@
                             </div>
                             <div id="hpf-display" class="text-xs text-center text-gray-500 pt-2"></div>
                         </div>
+                        <!-- Loudness Maximizer -->
                         <div class="bg-gray-800/50 p-4 rounded-lg space-y-3">
+                             <p class="text-xs text-center text-gray-400 italic -mt-1 mb-2">Tip: No more than 1 dB of Gain Reduction.</p>
                             <h5 class="font-bold text-indigo-400">Loudness Maximizer</h5>
                             <div class="space-y-2"><div class="flex justify-between items-center text-sm"><label>Makeup Gain</label><span id="limiter-gain-val" class="editable-span font-mono bg-gray-900 px-2 py-0.5 rounded">3.5 dB</span></div><input type="range" id="limiter-gain" min="0" max="12" step="0.1" class="w-full"></div>
                             <div class="pt-2 mt-auto"><div class="text-sm mb-1 text-gray-400">Gain Reduction</div><div class="flex items-center gap-2"><div class="meter-track flex-grow"><div id="limiter-gr-meter" class="meter-bar"></div></div><span id="limiter-gr-val" class="w-16 text-right font-mono text-sm text-amber-400">-0.0 dB</span></div></div>
@@ -143,6 +150,10 @@
     </div>
 
     <script>
+        // --- Prevent Browser Default Drag/Drop ---
+        window.addEventListener('dragover', e => e.preventDefault());
+        window.addEventListener('drop', e => e.preventDefault());
+
         // --- UI Elements ---
         const ui = {
             uploadSection: document.getElementById('upload-section'), resultSection: document.getElementById('result-section'), audioUpload: document.getElementById('audio-upload'), getInstructionsBtn: document.getElementById('get-instructions-btn'), fileInfo: document.getElementById('file-info'), fileNameEl: document.getElementById('file-name'), loadingSpinner: document.getElementById('loading-spinner'), loadingText: document.getElementById('loading-text'), resetBtn: document.getElementById('reset-btn'), playerControls: document.getElementById('player-controls'), previewOriginalBtn: document.getElementById('preview-original-btn'), previewMasteredBtn: document.getElementById('preview-mastered-btn'), downloadMasteredBtn: document.getElementById('download-mastered-btn'), donationSection: document.getElementById('donation-section'), controlsWrapper: document.getElementById('controls-wrapper'),
@@ -348,6 +359,7 @@
         
         function makeSpanEditable(span, slider, config) {
             span.addEventListener('click', () => {
+                let isHandled = false;
                 const originalValue = parseFloat(slider.value);
                 const input = document.createElement('input');
                 input.type = 'number';
@@ -364,28 +376,34 @@
                 input.focus();
                 input.select();
 
-                const commitChange = () => {
-                    let newValue = parseFloat(input.value);
-                    if (isNaN(newValue)) {
-                        newValue = originalValue;
-                    } else {
-                        newValue = Math.max(config.min, Math.min(config.max, newValue));
+                const finishEditing = (commit) => {
+                    if (isHandled) return;
+                    isHandled = true;
+
+                    if (commit) {
+                        let newValue = parseFloat(input.value);
+                        if (isNaN(newValue)) {
+                            newValue = originalValue;
+                        } else {
+                            newValue = Math.max(config.min, Math.min(config.max, newValue));
+                        }
+                        config.update(newValue);
                     }
-                    config.update(newValue);
+                    
                     if (input.parentElement) {
                         input.remove();
-                        span.style.display = '';
                     }
+                    span.style.display = '';
                 };
                 
-                input.addEventListener('blur', commitChange);
+                input.addEventListener('blur', () => finishEditing(true));
                 input.addEventListener('keydown', e => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        commitChange();
+                        finishEditing(true); // Commit
                     } else if (e.key === 'Escape') {
-                        input.remove();
-                        span.style.display = '';
+                        e.preventDefault();
+                        finishEditing(false); // Cancel
                     }
                 });
             });
@@ -453,7 +471,7 @@
         function drawWaveform(buffer) { const canvas = ui.waveformCanvas; const ctx = canvas.getContext('2d'); const width = ui.waveformContainer.clientWidth; const height = ui.waveformContainer.clientHeight; canvas.width = width; canvas.height = height; const data = buffer.getChannelData(0); const step = Math.ceil(data.length / width); const amp = height / 2; ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(160, 174, 192, 0.7)'; ctx.clearRect(0, 0, width, height); ctx.beginPath(); for (let i = 0; i < width; i++) { let min = 1.0, max = -1.0; for (let j = 0; j < step; j++) { const datum = data[(i * step) + j]; if (datum < min) min = datum; if (datum > max) max = datum; } ctx.moveTo(i, (1 + min) * amp); ctx.lineTo(i, (1 + max) * amp); } ctx.stroke(); }
         function formatTime(seconds) { const minutes = Math.floor(seconds / 60); const remainingSeconds = Math.floor(seconds % 60); return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`; }
         function updatePlayhead() { if (!isPlaying || !audioContext) { cancelAnimationFrame(animationFrameId); return; } const elapsed = audioContext.currentTime - playbackStartTime; const currentPlaybackTime = startOffset + elapsed; const progress = (currentPlaybackTime / audioBuffer.duration); if (progress >= 1) { ui.playhead.style.left = '100%'; ui.currentTime.textContent = formatTime(audioBuffer.duration); stopPlayback(); } else { ui.playhead.style.left = `${progress * 100}%`; ui.currentTime.textContent = formatTime(currentPlaybackTime); animationFrameId = requestAnimationFrame(updatePlayhead); } }
-        async function exportMasteredFile() { if (!audioBuffer || !masteringSettings) return; ui.downloadMasteredBtn.disabled = true; ui.downloadMasteredBtn.textContent = 'Exporting...'; try { const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate); const source = offlineCtx.createBufferSource(); source.buffer = audioBuffer; const { finalNode } = applyMasteringChain(offlineCtx, source, masteringSettings); finalNode.connect(offlineCtx.destination); source.start(0); const renderedBuffer = await offlineCtx.startRendering(); const wavBlob = bufferToWave(renderedBuffer, 24); const url = URL.createObjectURL(wavBlob); const a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = 'mastered-track-24bit.wav'; document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); a.remove(); } catch (e) { console.error("Export failed:", e); alert("Sorry, the export failed."); } finally { ui.downloadMasteredBtn.disabled = false; ui.downloadMasteredBtn.textContent = 'Download Mastered'; } }
+        async function exportMasteredFile() { if (!audioBuffer || !masteringSettings) return; ui.downloadMasteredBtn.disabled = true; ui.downloadMasteredBtn.textContent = 'Exporting...'; try { const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate); const source = offlineCtx.createBufferSource(); source.buffer = audioBuffer; const { finalNode } = applyMasteringChain(offlineCtx, source, masteringSettings); finalNode.connect(offlineCtx.destination); source.start(0); const renderedBuffer = await offlineCtx.startRendering(); const wavBlob = bufferToWave(renderedBuffer, 24); const url = URL.createObjectURL(wavBlob); const a = document.createElement('a'); a.style.display = 'none'; a.href = url; const originalName = uploadedFile.name.split('.').slice(0, -1).join('.'); a.download = `${originalName}Master.wav`; document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); a.remove(); } catch (e) { console.error("Export failed:", e); alert("Sorry, the export failed."); } finally { ui.downloadMasteredBtn.disabled = false; ui.downloadMasteredBtn.textContent = 'Download Mastered'; } }
         function bufferToWave(audioBuffer, bitDepth = 24) { const numChannels = audioBuffer.numberOfChannels, sampleRate = audioBuffer.sampleRate, numFrames = audioBuffer.length, bytesPerSample = bitDepth / 8; const headerSize = 44, dataSize = numFrames * numChannels * bytesPerSample, fileSize = headerSize + dataSize; const buffer = new ArrayBuffer(fileSize), view = new DataView(buffer); let pos = 0; view.setUint8(pos++, 82); view.setUint8(pos++, 73); view.setUint8(pos++, 70); view.setUint8(pos++, 70); view.setUint32(pos, fileSize - 8, true); pos += 4; view.setUint8(pos++, 87); view.setUint8(pos++, 65); view.setUint8(pos++, 86); view.setUint8(pos++, 69); view.setUint8(pos++, 102); view.setUint8(pos++, 109); view.setUint8(pos++, 116); view.setUint8(pos++, 32); view.setUint32(pos, 16, true); pos += 4; view.setUint16(pos, 1, true); pos += 2; view.setUint16(pos, numChannels, true); pos += 2; view.setUint32(pos, sampleRate, true); pos += 4; view.setUint32(pos, sampleRate * numChannels * bytesPerSample, true); pos += 4; view.setUint16(pos, numChannels * bytesPerSample, true); pos += 2; view.setUint16(pos, bitDepth, true); pos += 2; view.setUint8(pos++, 100); view.setUint8(pos++, 97); view.setUint8(pos++, 116); view.setUint8(pos++, 97); view.setUint32(pos, dataSize, true); pos += 4; const channels = []; for (let i = 0; i < numChannels; i++) channels.push(audioBuffer.getChannelData(i)); const maxInt = 8388607; for (let i = 0; i < numFrames; i++) { for (let j = 0; j < numChannels; j++) { const floatSample = channels[j][i], clampedSample = Math.max(-1, Math.min(1, floatSample)); let intSample = Math.round(clampedSample * maxInt); view.setUint8(pos++, intSample & 255); view.setUint8(pos++, (intSample >> 8) & 255); view.setUint8(pos++, (intSample >> 16) & 255); } } return new Blob([view], { type: 'audio/wav' }); }
         
         // --- Event Listeners & Main Logic ---
