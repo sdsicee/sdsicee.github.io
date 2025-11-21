@@ -51,6 +51,12 @@
         input:checked + .slider { background-color: #4f46e5; }
         input:checked + .slider:before { transform: translateX(14px); }
         .editable-span { cursor: text; position: relative; }
+        
+        /* LUFS Modal */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
     </style>
 </head>
 <body class="gradient-bg text-gray-200 min-h-screen flex items-center justify-center p-4">
@@ -61,7 +67,7 @@
             <p class="text-lg text-gray-400 mt-2">Analyze, get settings, then fine-tune your master in real-time.</p>
         </header>
 
-        <main class="glass-card rounded-2xl shadow-2xl p-6 md:p-8">
+        <main class="glass-card rounded-2xl shadow-2xl p-6 md:p-8 relative">
             <!-- Upload Section -->
             <div id="upload-section">
                 <div class="flex items-center justify-center w-full">
@@ -81,7 +87,15 @@
                 <div id="controls-wrapper" class="hidden">
                     <!-- Player Controls -->
                     <div id="player-controls" class="p-4 border-b border-gray-700 mb-6 space-y-4">
-                        <div class="flex flex-wrap justify-center gap-4"><button id="preview-original-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition-colors">Preview Original</button><button id="preview-mastered-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">Preview Mastered</button><button id="download-mastered-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">Download Mastered</button></div>
+                        <div class="flex flex-wrap justify-center gap-4">
+                            <button id="preview-original-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition-colors">Preview Original</button>
+                            <button id="preview-mastered-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">Preview Mastered</button>
+                            <button id="check-lufs-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/></svg>
+                                Check LUFS
+                            </button>
+                            <button id="download-mastered-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">Download Mastered</button>
+                        </div>
                         <div id="waveform-display" class="pt-2">
                              <div id="waveform-container"><canvas id="waveform-canvas" style="width: 100%; height: 100%;"></canvas><div id="playhead"></div></div>
                              <div class="flex justify-between text-xs font-mono text-gray-400 mt-1"><span id="current-time">0:00</span><span id="total-time">0:00</span></div>
@@ -147,6 +161,22 @@
                 <button id="reset-btn" class="w-full mt-8 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 hidden">Start Over</button>
             </div>
         </main>
+        
+        <!-- LUFS Result Modal -->
+        <div id="lufs-modal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-50">
+            <div class="glass-card p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center border border-gray-600">
+                <h3 class="text-2xl font-bold text-white mb-2">Loudness Analysis</h3>
+                <div class="py-6">
+                    <p class="text-gray-400 text-sm uppercase tracking-wider">Integrated LUFS</p>
+                    <div id="lufs-display-value" class="text-5xl font-bold text-purple-400 mt-2">-14.0</div>
+                    <p class="text-xs text-gray-500 mt-2">(EBU R128 Standard)</p>
+                </div>
+                <div class="space-y-3">
+                    <p id="lufs-target-msg" class="text-sm text-gray-300"></p>
+                    <button id="close-lufs-modal" class="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -156,8 +186,9 @@
 
         // --- UI Elements ---
         const ui = {
-            uploadSection: document.getElementById('upload-section'), resultSection: document.getElementById('result-section'), audioUpload: document.getElementById('audio-upload'), getInstructionsBtn: document.getElementById('get-instructions-btn'), fileInfo: document.getElementById('file-info'), fileNameEl: document.getElementById('file-name'), loadingSpinner: document.getElementById('loading-spinner'), loadingText: document.getElementById('loading-text'), resetBtn: document.getElementById('reset-btn'), playerControls: document.getElementById('player-controls'), previewOriginalBtn: document.getElementById('preview-original-btn'), previewMasteredBtn: document.getElementById('preview-mastered-btn'), downloadMasteredBtn: document.getElementById('download-mastered-btn'), donationSection: document.getElementById('donation-section'), controlsWrapper: document.getElementById('controls-wrapper'),
+            uploadSection: document.getElementById('upload-section'), resultSection: document.getElementById('result-section'), audioUpload: document.getElementById('audio-upload'), getInstructionsBtn: document.getElementById('get-instructions-btn'), fileInfo: document.getElementById('file-info'), fileNameEl: document.getElementById('file-name'), loadingSpinner: document.getElementById('loading-spinner'), loadingText: document.getElementById('loading-text'), resetBtn: document.getElementById('reset-btn'), playerControls: document.getElementById('player-controls'), previewOriginalBtn: document.getElementById('preview-original-btn'), previewMasteredBtn: document.getElementById('preview-mastered-btn'), downloadMasteredBtn: document.getElementById('download-mastered-btn'), checkLufsBtn: document.getElementById('check-lufs-btn'), donationSection: document.getElementById('donation-section'), controlsWrapper: document.getElementById('controls-wrapper'),
             waveformContainer: document.getElementById('waveform-container'), waveformCanvas: document.getElementById('waveform-canvas'), playhead: document.getElementById('playhead'), currentTime: document.getElementById('current-time'), totalTime: document.getElementById('total-time'),
+            lufsModal: document.getElementById('lufs-modal'), lufsValue: document.getElementById('lufs-display-value'), lufsMsg: document.getElementById('lufs-target-msg'), closeLufsModal: document.getElementById('close-lufs-modal'),
             ceq: { 
                 b1: { enable: document.getElementById('ceq-b1-enable'), controls: document.getElementById('ceq-b1-controls'), freqSlider: document.getElementById('ceq-b1-freq'), freqVal: document.getElementById('ceq-b1-freq-val'), gainSlider: document.getElementById('ceq-b1-gain'), gainVal: document.getElementById('ceq-b1-gain-val'), qSlider: document.getElementById('ceq-b1-q'), qVal: document.getElementById('ceq-b1-q-val') },
                 b2: { enable: document.getElementById('ceq-b2-enable'), controls: document.getElementById('ceq-b2-controls'), freqSlider: document.getElementById('ceq-b2-freq'), freqVal: document.getElementById('ceq-b2-freq-val'), gainSlider: document.getElementById('ceq-b2-gain'), gainVal: document.getElementById('ceq-b2-gain-val'), qSlider: document.getElementById('ceq-b2-q'), qVal: document.getElementById('ceq-b2-q-val') }
@@ -471,9 +502,208 @@
         function drawWaveform(buffer) { const canvas = ui.waveformCanvas; const ctx = canvas.getContext('2d'); const width = ui.waveformContainer.clientWidth; const height = ui.waveformContainer.clientHeight; canvas.width = width; canvas.height = height; const data = buffer.getChannelData(0); const step = Math.ceil(data.length / width); const amp = height / 2; ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(160, 174, 192, 0.7)'; ctx.clearRect(0, 0, width, height); ctx.beginPath(); for (let i = 0; i < width; i++) { let min = 1.0, max = -1.0; for (let j = 0; j < step; j++) { const datum = data[(i * step) + j]; if (datum < min) min = datum; if (datum > max) max = datum; } ctx.moveTo(i, (1 + min) * amp); ctx.lineTo(i, (1 + max) * amp); } ctx.stroke(); }
         function formatTime(seconds) { const minutes = Math.floor(seconds / 60); const remainingSeconds = Math.floor(seconds % 60); return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`; }
         function updatePlayhead() { if (!isPlaying || !audioContext) { cancelAnimationFrame(animationFrameId); return; } const elapsed = audioContext.currentTime - playbackStartTime; const currentPlaybackTime = startOffset + elapsed; const progress = (currentPlaybackTime / audioBuffer.duration); if (progress >= 1) { ui.playhead.style.left = '100%'; ui.currentTime.textContent = formatTime(audioBuffer.duration); stopPlayback(); } else { ui.playhead.style.left = `${progress * 100}%`; ui.currentTime.textContent = formatTime(currentPlaybackTime); animationFrameId = requestAnimationFrame(updatePlayhead); } }
-        async function exportMasteredFile() { if (!audioBuffer || !masteringSettings) return; ui.downloadMasteredBtn.disabled = true; ui.downloadMasteredBtn.textContent = 'Exporting...'; try { const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate); const source = offlineCtx.createBufferSource(); source.buffer = audioBuffer; const { finalNode } = applyMasteringChain(offlineCtx, source, masteringSettings); finalNode.connect(offlineCtx.destination); source.start(0); const renderedBuffer = await offlineCtx.startRendering(); const wavBlob = bufferToWave(renderedBuffer, 24); const url = URL.createObjectURL(wavBlob); const a = document.createElement('a'); a.style.display = 'none'; a.href = url; const originalName = uploadedFile.name.split('.').slice(0, -1).join('.'); a.download = `${originalName}Master.wav`; document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); a.remove(); } catch (e) { console.error("Export failed:", e); alert("Sorry, the export failed."); } finally { ui.downloadMasteredBtn.disabled = false; ui.downloadMasteredBtn.textContent = 'Download Mastered'; } }
+        
+        // --- Render Helper ---
+        async function getRenderedBuffer(buffer, settings) {
+            const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
+            const source = offlineCtx.createBufferSource();
+            source.buffer = buffer;
+            const { finalNode } = applyMasteringChain(offlineCtx, source, settings);
+            finalNode.connect(offlineCtx.destination);
+            source.start(0);
+            return await offlineCtx.startRendering();
+        }
+
+        async function exportMasteredFile() { 
+            if (!audioBuffer || !masteringSettings) return; 
+            ui.downloadMasteredBtn.disabled = true; 
+            ui.downloadMasteredBtn.textContent = 'Exporting...'; 
+            try { 
+                const renderedBuffer = await getRenderedBuffer(audioBuffer, masteringSettings);
+                const wavBlob = bufferToWave(renderedBuffer, 24); 
+                const url = URL.createObjectURL(wavBlob); 
+                const a = document.createElement('a'); 
+                a.style.display = 'none'; 
+                a.href = url; 
+                const originalName = uploadedFile.name.split('.').slice(0, -1).join('.'); 
+                a.download = `${originalName}Master.wav`; 
+                document.body.appendChild(a); 
+                a.click(); 
+                window.URL.revokeObjectURL(url); 
+                a.remove(); 
+            } catch (e) { 
+                console.error("Export failed:", e); 
+                alert("Sorry, the export failed."); 
+            } finally { 
+                ui.downloadMasteredBtn.disabled = false; 
+                ui.downloadMasteredBtn.textContent = 'Download Mastered'; 
+            } 
+        }
+
         function bufferToWave(audioBuffer, bitDepth = 24) { const numChannels = audioBuffer.numberOfChannels, sampleRate = audioBuffer.sampleRate, numFrames = audioBuffer.length, bytesPerSample = bitDepth / 8; const headerSize = 44, dataSize = numFrames * numChannels * bytesPerSample, fileSize = headerSize + dataSize; const buffer = new ArrayBuffer(fileSize), view = new DataView(buffer); let pos = 0; view.setUint8(pos++, 82); view.setUint8(pos++, 73); view.setUint8(pos++, 70); view.setUint8(pos++, 70); view.setUint32(pos, fileSize - 8, true); pos += 4; view.setUint8(pos++, 87); view.setUint8(pos++, 65); view.setUint8(pos++, 86); view.setUint8(pos++, 69); view.setUint8(pos++, 102); view.setUint8(pos++, 109); view.setUint8(pos++, 116); view.setUint8(pos++, 32); view.setUint32(pos, 16, true); pos += 4; view.setUint16(pos, 1, true); pos += 2; view.setUint16(pos, numChannels, true); pos += 2; view.setUint32(pos, sampleRate, true); pos += 4; view.setUint32(pos, sampleRate * numChannels * bytesPerSample, true); pos += 4; view.setUint16(pos, numChannels * bytesPerSample, true); pos += 2; view.setUint16(pos, bitDepth, true); pos += 2; view.setUint8(pos++, 100); view.setUint8(pos++, 97); view.setUint8(pos++, 116); view.setUint8(pos++, 97); view.setUint32(pos, dataSize, true); pos += 4; const channels = []; for (let i = 0; i < numChannels; i++) channels.push(audioBuffer.getChannelData(i)); const maxInt = 8388607; for (let i = 0; i < numFrames; i++) { for (let j = 0; j < numChannels; j++) { const floatSample = channels[j][i], clampedSample = Math.max(-1, Math.min(1, floatSample)); let intSample = Math.round(clampedSample * maxInt); view.setUint8(pos++, intSample & 255); view.setUint8(pos++, (intSample >> 8) & 255); view.setUint8(pos++, (intSample >> 16) & 255); } } return new Blob([view], { type: 'audio/wav' }); }
         
+        // --- LUFS CALCULATION (EBU R128 Standard Compliance) ---
+        async function calculateIntegratedLUFS(buffer) {
+            const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
+            const source = offlineCtx.createBufferSource();
+            source.buffer = buffer;
+
+            // ITU-R BS.1770-4 Coefficients
+            const coefficients = {
+                48000: {
+                    stage1: { // High Shelf
+                        feedforward: [1.53512485958697, -2.69169618940638, 1.19839281085285],
+                        feedback: [1.0, -1.69065929318241, 0.73248077421585]
+                    },
+                    stage2: { // High Pass (RLB)
+                        feedforward: [1.0, -2.0, 1.0],
+                        feedback: [1.0, -1.99004745483398, 0.99007225036621]
+                    }
+                },
+                44100: {
+                    stage1: {
+                        feedforward: [1.53069580543516, -2.65097999515473, 1.16698512767254],
+                        feedback: [1.0, -1.66375013486698, 0.71045107281995]
+                    },
+                    stage2: {
+                        feedforward: [1.0, -2.0, 1.0],
+                        feedback: [1.0, -1.98916967588724, 0.98924026085366]
+                    }
+                }
+            };
+
+            const coeffs = coefficients[buffer.sampleRate];
+            let filterStage1, filterStage2;
+
+            if (coeffs) {
+                // Use precise IIR Filters if sample rate matches standard
+                filterStage1 = offlineCtx.createIIRFilter(coeffs.stage1.feedforward, coeffs.stage1.feedback);
+                filterStage2 = offlineCtx.createIIRFilter(coeffs.stage2.feedforward, coeffs.stage2.feedback);
+            } else {
+                // Fallback for non-standard rates (approximate)
+                console.warn("Using approximate K-Weighting for non-standard sample rate.");
+                filterStage1 = offlineCtx.createBiquadFilter();
+                filterStage1.type = 'highshelf';
+                filterStage1.frequency.value = 1500;
+                filterStage1.gain.value = 4.0;
+                
+                filterStage2 = offlineCtx.createBiquadFilter();
+                filterStage2.type = 'highpass';
+                filterStage2.frequency.value = 38;
+            }
+
+            source.connect(filterStage1);
+            filterStage1.connect(filterStage2);
+            filterStage2.connect(offlineCtx.destination);
+            source.start();
+
+            const kWeightedBuffer = await offlineCtx.startRendering();
+
+            // 2. Calculate Loudness
+            const sampleRate = kWeightedBuffer.sampleRate;
+            const channels = [];
+            for(let c = 0; c < kWeightedBuffer.numberOfChannels; c++) {
+                channels.push(kWeightedBuffer.getChannelData(c));
+            }
+
+            // Gating block size: 400ms, 75% overlap (step: 100ms)
+            const blockSize = Math.floor(0.4 * sampleRate);
+            const stepSize = Math.floor(0.1 * sampleRate);
+            const numBlocks = Math.floor((kWeightedBuffer.length - blockSize) / stepSize);
+            
+            if(numBlocks <= 0) return -99; // Audio too short
+
+            const blockLoudnesses = [];
+
+            // Calculate Mean Square for each block
+            for (let i = 0; i < numBlocks; i++) {
+                const start = i * stepSize;
+                let sumSq = 0;
+                // Sum squares of all channels for this block (BS.1770 Summation)
+                for (let c = 0; c < channels.length; c++) {
+                    for (let j = 0; j < blockSize; j++) {
+                        const sample = channels[c][start + j];
+                        sumSq += sample * sample;
+                    }
+                }
+                
+                const meanSquare = sumSq / blockSize;
+
+                if (meanSquare > 1e-10) { // Avoid log(0)
+                    const loudness = -0.691 + 10 * Math.log10(meanSquare);
+                    blockLoudnesses.push(loudness);
+                } else {
+                    blockLoudnesses.push(-Infinity);
+                }
+            }
+
+            // 3. Gating
+            // Absolute Threshold: -70 LUFS
+            const absoluteThreshold = -70;
+            const aboveAbsolute = blockLoudnesses.filter(l => l > absoluteThreshold);
+
+            if (aboveAbsolute.length === 0) return -70;
+
+            // Calculate average of blocks above absolute threshold to find Relative Threshold
+            // R128 summation: 10 * log10( mean( 10^(val/10) ) )
+            let sumPower = 0;
+            for(let l of aboveAbsolute) sumPower += Math.pow(10, l/10);
+            const loudnessUnkagg = 10 * Math.log10(sumPower / aboveAbsolute.length);
+
+            // Relative Threshold: loudnessUnkagg - 10 LU
+            const relativeThreshold = loudnessUnkagg - 10;
+            const aboveRelative = aboveAbsolute.filter(l => l > relativeThreshold);
+
+            if (aboveRelative.length === 0) return -70;
+
+            // Final Calculation
+            sumPower = 0;
+            for(let l of aboveRelative) sumPower += Math.pow(10, l/10);
+            const finalLoudness = 10 * Math.log10(sumPower / aboveRelative.length);
+
+            return finalLoudness;
+        }
+
+        // --- Check LUFS Handler ---
+        ui.checkLufsBtn.addEventListener('click', async () => {
+            if(!audioBuffer || !masteringSettings) return;
+            
+            const btnContent = ui.checkLufsBtn.innerHTML;
+            ui.checkLufsBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Measuring...`;
+            ui.checkLufsBtn.disabled = true;
+
+            try {
+                // Render current master
+                const rendered = await getRenderedBuffer(audioBuffer, masteringSettings);
+                // Calculate LUFS
+                const lufs = await calculateIntegratedLUFS(rendered);
+                
+                // Update Modal
+                ui.lufsValue.textContent = lufs.toFixed(1) + " LUFS";
+                
+                // Provide context message
+                let msg = "";
+                if (lufs > -9) msg = "Very loud (Club/EDM style). Might lack dynamic range.";
+                else if (lufs > -12) msg = "Competitive loudness. Good for streaming (Spotify/Apple).";
+                else if (lufs > -14) msg = "Dynamic and punchy. Ideal for streaming normalization.";
+                else msg = "On the quiet side. Good for classical or jazz.";
+                ui.lufsMsg.textContent = msg;
+
+                // Show Modal
+                ui.lufsModal.classList.remove('hidden');
+            } catch (e) {
+                console.error(e);
+                alert("Could not calculate LUFS.");
+            } finally {
+                ui.checkLufsBtn.innerHTML = btnContent;
+                ui.checkLufsBtn.disabled = false;
+            }
+        });
+
+        ui.closeLufsModal.addEventListener('click', () => {
+            ui.lufsModal.classList.add('hidden');
+        });
+
         // --- Event Listeners & Main Logic ---
         ui.audioUpload.addEventListener('change', (event) => { const files = event.target.files; if (files.length > 0) { uploadedFile = files[0]; ui.fileNameEl.textContent = uploadedFile.name; ui.fileInfo.classList.remove('hidden'); ui.getInstructionsBtn.disabled = false; } });
         ui.getInstructionsBtn.addEventListener('click', async () => { if (!uploadedFile) return; ui.uploadSection.classList.add('hidden'); ui.resultSection.classList.remove('hidden'); ui.loadingSpinner.classList.remove('hidden'); ui.controlsWrapper.classList.add('hidden'); ui.resetBtn.classList.add('hidden'); ui.donationSection.classList.add('hidden'); try { ui.loadingText.textContent = 'Performing deep audio analysis...'; const analysis = await analyzeAudio(uploadedFile); ui.loadingText.textContent = 'Generating custom mastering chain...'; await new Promise(resolve => setTimeout(resolve, 500)); masteringSettings = generateMasteringSettings(analysis); if (masteringSettings) { populateUI(masteringSettings); setupAllListeners(); requestAnimationFrame(() => drawWaveform(audioBuffer)); ui.totalTime.textContent = formatTime(audioBuffer.duration); ui.controlsWrapper.classList.remove('hidden'); } else throw new Error("Could not generate mastering settings."); } catch (error) { console.error('Error during analysis or processing:', error); ui.loadingSpinner.innerHTML = `<div class="text-red-400 text-center"><p><strong>Oops! Something went wrong.</strong></p><p>${error.message}</p><p>Please try again with a different file.</p></div>`; } finally { ui.loadingSpinner.classList.add('hidden'); ui.loadingText.textContent = "Initializing..."; ui.resetBtn.classList.remove('hidden'); ui.donationSection.classList.remove('hidden'); } });
